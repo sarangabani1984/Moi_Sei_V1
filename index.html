@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E TO E User Management</title>
+  <!-- Tailwind CSS CDN for clean, responsive admin styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="config.js"></script>
+  <!-- Google Fonts: Inter (UI text) + Playfair Display (headings, classic feel) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef4f0',
+              100: '#d7e6dc',
+              200: '#b0cdba',
+              300: '#86b193',
+              400: '#5f9373',
+              500: '#427557',
+              600: '#315d44',
+              700: '#234a35',
+              800: '#1a3a29',
+              900: '#12281c',
+            },
+            accent: {
+              50: '#fdf2ed',
+              100: '#fbe1d2',
+              200: '#f5c2a8',
+              300: '#eda176',
+              400: '#e07f4c',
+              500: '#c7602f',
+              600: '#ab4d24',
+              700: '#8a3d1d',
+              800: '#6b2f17',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Highlights whichever field currently has focus, so tabbing/jumping between fields is easy to spot at a glance. */
+    #userForm input:not([type="checkbox"]):not([type="hidden"]):focus,
+    #userForm textarea:focus,
+    #denominationRows input:focus {
+      background-color: #7ef0a6;
+    }
+    /* Printable receipt: invisible in the normal UI, shown only inside the browser's print dialog/preview. */
+    #receiptPrintArea { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
+      #receiptPrintArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+    }
+  </style>
+</head>
+<body class="bg-[#2d2d2d] text-slate-900 min-h-screen flex flex-col antialiased">
+
+  <!-- Staff Login Overlay: full-bleed split screen (branding panel + form panel), blocks the whole Admin Panel until a counter/admin PIN is entered. -->
+  <div id="staffLoginOverlay" class="fixed inset-0 z-50 flex flex-col md:flex-row">
+    <!-- Left: branding panel, hidden on small screens so the form gets full width there -->
+    <div
+      class="hidden md:block md:w-1/2 lg:w-3/5 bg-brand-900 bg-cover bg-center"
+      style="background-image: url('assets/Gemini_Generated_Image_d9t16md9t16md9t1.png');"
+    ></div>
+
+    <!-- Right: the actual login form, full height -->
+    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#2d2d2d]">
+      <div class="w-full max-w-sm">
+        <!-- Brand mark, shown directly above the login form -->
+        <div class="mb-8">
+          <h2 class="text-5xl font-bold font-serif tracking-tight leading-none">
+            <span class="text-brand-700">மொய்</span><span class="bg-gradient-to-r from-accent-600 via-accent-500 to-amber-400 bg-clip-text text-transparent">செய்</span>
+          </h2>
+          <div class="h-1.5 w-20 bg-gradient-to-r from-accent-600 to-amber-400 rounded-full mt-3"></div>
+        </div>
+
+        <!-- Role selector: purely a UX hint (the PIN itself determines the real account); mismatches are rejected on submit. -->
+        <div class="grid grid-cols-2 gap-1 mb-5 p-1 bg-slate-100 rounded-lg">
+          <button type="button" id="loginRoleAdminBtn" onclick="selectLoginRole('admin')" class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md transition-colors">
+            🛡️ நிர்வாகி <span class="hidden sm:inline">(Admin)</span>
+          </button>
+          <button type="button" id="loginRoleCounterBtn" onclick="selectLoginRole('counter')" class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md transition-colors">
+            🧾 கவுண்டர் <span class="hidden sm:inline">(Counter)</span>
+          </button>
+        </div>
+
+        <form id="staffLoginForm" onsubmit="handleStaffLogin(event)" class="space-y-3">
+          <div>
+            <label for="staffPinInput" id="staffPinLabel" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 text-center">
+              PIN ஐ உள்ளிடவும்
+            </label>
+            <input
+              type="password"
+              inputmode="numeric"
+              id="staffPinInput"
+              maxlength="10"
+              autocomplete="off"
+              placeholder="••••"
+              required
+              class="block w-full text-center tracking-[0.5em] text-2xl font-bold rounded-lg border-2 border-slate-200 px-3.5 py-3 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 transition-colors"
+            >
+          </div>
+          <div id="staffLoginError" class="hidden text-xs text-red-600 text-center font-medium bg-red-50 border border-red-100 rounded-md py-2 px-3"></div>
+          <button type="submit" class="w-full px-4 py-3 bg-accent-600 hover:bg-accent-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all">
+            உள்நுழைக (Login)
+          </button>
+        </form>
+        <p class="text-[11px] text-slate-400 text-center mt-4">👤 ஒவ்வொரு நபருக்கும் தனி PIN உண்டு</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Header with Title & API Health/Status -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-brand-600 to-accent-600 text-white flex items-center justify-center shadow-md ring-2 ring-white">
+          <span class="font-serif text-xl font-bold leading-none">ம</span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold font-serif tracking-tight leading-tight"><span class="text-brand-700">மொய்</span><span class="text-accent-600">செய்</span></h1>
+          <p class="text-xs text-slate-500 font-medium">FastAPI CRUD Console &bull; <span class="font-mono text-slate-600">http://127.0.0.1:8001</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Logged-in staff badge + Logout -->
+        <div id="staffBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200">
+          👤 <span id="staffNameText"></span>
+        </div>
+        <button
+          onclick="handleStaffLogout()"
+          id="logoutBtn"
+          class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">
+          வெளியேறு
+        </button>
+
+        <!-- Re-opens the most recently auto-printed receipt (no physical printer needed to verify its contents). -->
+        <button
+          onclick="openLastReceiptModal()"
+          id="lastReceiptBtn"
+          title="கடைசியாக பதிவு செய்த ரசீதைக் காட்டு"
+          class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">
+          🧾 கடைசி ரசீது
+        </button>
+
+        <!-- Live Connection Status Badge -->
+        <div id="connectionStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          <span id="statusIndicatorDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <span id="statusText">Checking Backend...</span>
+        </div>
+
+        <button 
+          onclick="loadUsers()" 
+          id="reloadBtn"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors shadow-xs">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Reload Users
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Global Notification / Banner Container for errors or tips -->
+  <div id="globalAlertContainer" class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full hidden">
+    <div id="globalAlertBox" class="p-3.5 rounded-lg border text-sm flex items-start justify-between shadow-xs">
+      <div class="flex items-start gap-2.5">
+        <span id="alertIcon" class="mt-0.5"></span>
+        <div id="alertMessage" class="font-medium"></div>
+      </div>
+      <button onclick="dismissGlobalAlert()" class="text-slate-400 hover:text-slate-600 ml-3">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Layout: Three Columns (Left Search/Recent, Middle Form, Right Tally) -->
+  <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+    <div class="grid grid-cols-1 md:grid-cols-[repeat(16,minmax(0,1fr))] gap-6 items-start">
+
+      <!-- LEFT SIDEBAR: Inline Search + Last 10 Recent Records (2 cols on lg) -->
+      <section class="md:col-span-2 bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center">
+          <h2 class="text-sm font-semibold font-serif text-slate-900">தேடு / Search</h2>
+        </div>
+        <div class="p-3 border-b border-slate-100">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <input
+              type="text"
+              id="sidebarSearchInput"
+              oninput="handleSidebarSearch()"
+              placeholder="பெயர் / பொன்..."
+              class="block w-full pl-8 pr-2.5 py-2 text-xs border border-slate-300 rounded-md placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+          </div>
+        </div>
+        <div id="sidebarListTitle" class="px-3.5 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">சமீபத்தியவை</div>
+        <div id="sidebarRecordsList" class="flex-1 overflow-y-auto max-h-[60vh] divide-y divide-slate-50"></div>
+      </section>
+
+      <!-- MIDDLE COLUMN: User Registration & Edit Form (5 cols on lg) -->
+      <section class="md:col-span-5 bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+        <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center justify-center text-center">
+          <h2 class="text-sm font-semibold font-serif text-slate-900">குடும்ப விவரங்கள்</h2>
+          <!-- Kept but hidden: existing edit-mode JS still updates these, just no longer shown in the header. -->
+          <h2 id="formTitle" class="hidden"></h2>
+          <p id="formSubtitle" class="hidden"></p>
+        </div>
+
+        <form id="userForm" onsubmit="handleFormSubmit(event)" class="px-5 pb-5 pt-0 space-y-4">
+          <!-- Hidden input to store User ID during Edit mode -->
+          <input type="hidden" id="userId" value="">
+
+          <!-- Form feedback messages (local) -->
+          <div id="formFeedback" class="hidden text-xs p-3 rounded-lg border"></div>
+
+          <!-- Row 1: Serial Number | Thaimama -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="serialNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">வரிசை எண்</label>
+              <input type="text" id="serialNumber" disabled
+                class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 cursor-not-allowed">
+            </div>
+            <div class="flex flex-col">
+              <label for="isThaimama" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">தாய்மாமன்</label>
+              <div class="flex items-center h-[42px]">
+                <input type="checkbox" id="isThaimama" name="is_thaimama"
+                  class="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Phone | Paste details (frontend-only, auto-parses into the fields below) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="phoneNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                போன் <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="tel" 
+                id="phoneNumber" 
+                name="phone_number" 
+                placeholder="எ.கா. 9876543210" 
+                required
+                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors"
+              >
+            </div>
+            <div>
+              <label for="pasteDetails" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">ஒட்டவும் விவரங்களை</label>
+              <textarea id="pasteDetails" rows="1"
+                placeholder="சொந்தஊர் இருப்பு கணவர் மனைவி தொகை"
+                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
+            </div>
+          </div>
+
+          <!-- Row 3: Native Place | Current Place -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="nativePlace" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">சொந்த ஊர்</label>
+              <input type="text" id="nativePlace" name="native_place" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            </div>
+            <div>
+              <label for="currentPlace" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">இருப்பு</label>
+              <input type="text" id="currentPlace" name="current_place" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Row 4: Husband | Husband Job -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="relative">
+              <label for="husbandName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                கணவர் <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="husbandName" 
+                name="husband_name" 
+                placeholder="எ.கா. அருண் குமார்" 
+                required
+                autocomplete="off"
+                oninput="handleNameTypingInput('husbandName')"
+                onkeydown="handleNameFieldKeydown(event, 'husbandName')"
+                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors shadow-xs"
+              >
+              <div id="husbandNameSuggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto text-xs"></div>
+            </div>
+            <div>
+              <label for="husbandJob" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">கணவர் தொழில்</label>
+              <input type="text" id="husbandJob" name="husband_job" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Row 5: Wife | Wife Job -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="relative">
+              <label for="wifeName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">மனைவி</label>
+              <input type="text" id="wifeName" name="wife_name" autocomplete="off" oninput="handleNameTypingInput('wifeName')" onkeydown="handleNameFieldKeydown(event, 'wifeName')" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <div id="wifeNameSuggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto text-xs"></div>
+            </div>
+            <div>
+              <label for="wifeJob" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">மனைவி தொழில்</label>
+              <input type="text" id="wifeJob" name="wife_job" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            </div>
+          </div>
+
+          <!-- Row 6: Amount - frontend-only, never saved to the backend -->
+          <div>
+            <label for="amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">தொகை</label>
+            <input type="number" id="amount" step="1" min="0" placeholder="0"
+              class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            <p class="text-[11px] text-slate-400 mt-1">இந்தத் தொகை சேமிக்கப்படாது &bull; காட்சிக்கு மட்டும்</p>
+          </div>
+
+          <div>
+            <label for="notes" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">குறிப்பு</label>
+            <textarea id="notes" name="notes" rows="1" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
+          </div>
+
+          <!-- Others/Initial are still saved but no longer shown in the UI -->
+          <input type="hidden" id="others" name="others">
+          <input type="hidden" id="initial" name="initial">
+
+          <!-- Form Actions: sticky to the viewport bottom so Save is always reachable without scrolling -->
+          <div class="sticky bottom-0 z-10 -mx-5 px-5 pt-2 pb-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2.5">
+            <!-- Submit (Save / Update) Button -->
+            <button 
+              type="submit" 
+              id="submitBtn" 
+              class="w-full sm:flex-1 inline-flex justify-center items-center px-4 py-2.5 bg-accent-600 hover:bg-accent-700 text-white text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <span id="submitSpinner" class="hidden mr-2">
+                <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              </span>
+              <span id="submitBtnText">சேமிக்கவும்</span>
+            </button>
+
+            <!-- Cancel Edit Button (Hidden by default, shown in edit mode) -->
+            <button 
+              type="button" 
+              id="cancelEditBtn" 
+              onclick="cancelEdit()" 
+              class="hidden w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors">
+              திருத்தத்தை ரத்து செய்
+            </button>
+
+            <!-- Clear Button -->
+            <button 
+              type="button" 
+              id="clearBtn" 
+              onclick="clearForm()" 
+              class="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300">
+              அழிக்கவும்
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RIGHT COLUMN: Cash Denomination Tally + Live Match Comparator (5 cols on lg) -->
+      <section class="md:col-span-5 space-y-4">
+
+        <!-- Cash Denomination Tally Card -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+          <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center justify-center text-center">
+            <h3 class="text-sm font-semibold font-serif text-slate-900">ரொக்க நோட்டுகள் சரிபார்ப்பு</h3>
+          </div>
+
+          <div id="denominationRows" class="divide-y divide-slate-100"></div>
+        </div>
+
+        <!-- Live Match Comparator Card -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+
+          <div class="p-3 grid grid-cols-3 gap-2.5">
+            <div class="rounded-lg border border-slate-200 p-2.5">
+              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">படிவத் தொகை<br>(Form Amount)</div>
+              <div id="formAmountDisplay" class="text-lg font-bold text-slate-900">₹0</div>
+            </div>
+            <div id="varianceBox" class="rounded-lg border p-2.5 border-emerald-300 bg-[#7ef0a6]">
+              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">வித்தியாசம்<br>(Variance)</div>
+              <div id="varianceDisplay" class="text-lg font-bold text-emerald-900">₹0</div>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-2.5">
+              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">எண்ணிய ரொக்கம்<br>(Cash Counted)</div>
+              <div id="cashCountedDisplay" class="text-lg font-bold text-slate-900">₹0</div>
+            </div>
+          </div>
+
+          <div class="sticky bottom-0 z-10 px-3 py-2 border-t border-slate-100 flex items-center justify-center gap-2 bg-slate-50/95">
+            <div class="flex gap-2">
+              <button type="button" onclick="printTallySlip()" class="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">ரசீது / Print</button>
+              <button type="button" onclick="confirmTally()" class="px-2.5 py-1.5 text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 rounded-md transition-colors">உறுதி செய் (Ctrl+Enter)</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT RAIL: Event/Receiver context + Group Mode + status panels, kept visually separate
+           from the Denomination Tally workflow column so that one starts right at the top. -->
+      <section class="md:col-span-4 space-y-4">
+
+        <!-- Event & Receiver: compact status bar. Full picker lives in a modal (Ctrl+E) so it doesn't occupy the page. -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+          <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center">
+            <div class="flex items-center gap-1.5 flex-wrap text-xs text-slate-600">
+              <span class="font-semibold text-slate-900">நிகழ்வு:</span>
+              <span id="eventStatusText">தேர்ந்தெடுக்கப்படவில்லை</span>
+              <span class="text-slate-300">|</span>
+              <span class="font-semibold text-slate-900">பெறுநர்:</span>
+              <span id="receiverStatusText">—</span>
+            </div>
+          </div>
+          <div class="px-4 py-2.5 space-y-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="toggleDenominationSummary()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors">
+                📊 நோட்டு சுருக்கம்
+              </button>
+              <button type="button" id="groupModeToggleBtn" onclick="toggleGroupMode()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-md transition-colors">
+                👥 குழு பங்களிப்பு (Ctrl+G)
+              </button>
+              <button type="button" id="myCollectionsToggleBtn" onclick="toggleMyCollections()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
+                📒 எனது வசூல்கள்
+              </button>
+              <button type="button" id="adminCountersToggleBtn" onclick="toggleAdminCounters()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors">
+                🛠 கவுண்டர்கள்
+              </button>
+              <button type="button" onclick="openEventModal()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition-colors">
+                மாற்று (Ctrl+E)
+              </button>
+            </div>
+            <p id="activeContributorLabel" class="w-full text-[11px] text-slate-400"></p>
+          </div>
+        </div>
+
+        <!-- Group Mode banner: while active, Ctrl+S on the main form adds that person (with the current
+             Amount) to this running batch instead of just saving their profile; Ctrl+Enter posts every
+             person's contribution at once and prints one combined receipt. -->
+        <div id="groupModeBanner" class="hidden bg-violet-50 border border-violet-200 rounded-xl shadow-xs px-4 py-3 space-y-2">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs font-bold text-violet-800">👥 குழு பயன்முறை இயங்குகிறது (Group Mode ON)</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-violet-700">சேர்க்கப்பட்டோர்: <strong id="groupBatchCount">0</strong> &bull; மொத்தம்: <strong id="groupBatchTotal">₹0</strong></span>
+              <button type="button" onclick="confirmGroupBatch()" class="px-2.5 py-1 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-md transition-colors">முடி (Ctrl+Enter)</button>
+              <button type="button" onclick="exitGroupMode()" class="px-2.5 py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">ரத்து</button>
+            </div>
+          </div>
+          <input type="text" id="groupHandedOverBy" placeholder="கொண்டு வந்தவர் (விருப்பத்திற்குரியது)" class="block w-full rounded-md border border-violet-200 px-3 py-1.5 text-xs">
+          <div id="groupBatchList" class="text-[11px] text-violet-700 space-y-0.5 max-h-32 overflow-y-auto"></div>
+          <p class="text-[10px] text-violet-400">* வரிசையிலுள்ள படிவத்தில் விவரங்களை நிரப்பி, தொகையை நிரப்பி, Ctrl+S அழுத்தவும். முடிந்தபின் வலதுபுறத்துள்ள ரொக்க நோட்டு தாளியில் மொத்தத்தைத் தாளி எண்ணி பிறகு Ctrl+Enter அழுத்துக.</p>
+        </div>
+
+        <!-- My Collections: hidden by default, toggled on demand. Shows only what THIS logged-in counter recorded. -->
+        <div id="myCollectionsPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-xs font-semibold font-serif text-slate-900">எனது வசூல்கள் (இந்த நிகழ்விற்கு)</h3>
+              <p class="text-[11px] text-slate-500">My Collections for this Event</p>
+            </div>
+            <span id="myCollectionsTotal" class="text-sm font-extrabold text-accent-700">₹0</span>
+          </div>
+          <div id="myCollectionsBody" class="space-y-1.5 text-xs max-h-56 overflow-y-auto"></div>
+        </div>
+
+        <!-- Admin-only: all counters combined, plus a mini form to create new counter logins. -->
+        <div id="adminCountersPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-xs font-semibold font-serif text-slate-900">அனைத்து கவுண்டர்களும் (நிர்வாகி)</h3>
+              <p class="text-[11px] text-slate-500">All Counters Summary (Admin)</p>
+            </div>
+            <button type="button" onclick="toggleCreateStaffForm()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
+              + புதிய கவுண்டர்
+            </button>
+          </div>
+          <div id="adminCountersBody" class="space-y-1.5 text-xs"></div>
+
+          <div id="createStaffForm" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
+            <input type="text" id="newStaffName" placeholder="பெயர் (எ.கா. Counter 4)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <input type="text" id="newStaffPin" placeholder="PIN (4-6 இலக்கங்கள்)" inputmode="numeric" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <select id="newStaffRole" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+              <option value="counter">Counter</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div class="flex gap-2">
+              <button type="button" onclick="submitNewStaff()" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition-colors">உருவாக்கு</button>
+              <button type="button" onclick="toggleCreateStaffForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">ரத்து</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Denomination Summary: hidden by default, toggled on demand so it doesn't clutter the screen -->
+        <div id="denominationSummaryPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-xs font-semibold font-serif text-slate-900">இந்த நிகழ்விற்கான நோட்டு சுருக்கம்</h3>
+              <p class="text-[11px] text-slate-500">Live Denomination Summary for this Event</p>
+            </div>
+            <span id="denominationSummaryTotal" class="text-sm font-extrabold text-emerald-700">₹0</span>
+          </div>
+          <div id="denominationSummaryBody" class="space-y-1.5 text-xs"></div>
+          <p class="text-[10px] text-slate-400 mt-2">* இந்த அம்சம் தொடங்கியபின் பதிவான பங்களிப்புகளுக்கு மட்டும் நோட்டு எண்ணிக்கை கிடைக்கும்.</p>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Technical Implementation Footer -->
+  <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <div>
+        <span>API Base URL: </span>
+        <code class="font-mono text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded">http://127.0.0.1:8001</code>
+        <span class="ml-2 text-slate-400">&bull; Endpoints: POST /users, GET /users, GET /users?search=..., PUT /users/{id}</span>
+      </div>
+      <div class="text-slate-400">
+        Vanilla JS &bull; Clean RESTful Architecture
+      </div>
+    </div>
+  </footer>
+
+  <!-- Event & Receiver Modal: one-time-per-session picker (Ctrl+E), kept off the main page -->
+  <div id="eventModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeEventModalOnBackdrop(event)">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mt-10 overflow-hidden" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div>
+          <h3 class="text-sm font-semibold font-serif text-slate-900">நிகழ்வு &amp; பெறுநர்</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Event &amp; Receiver</p>
+        </div>
+        <button type="button" onclick="closeEventModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <label for="eventSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">நிகழ்வைத் தேர்ந்தெடுக்கவும்</label>
+          <button type="button" onclick="toggleNewEventForm()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
+            + புதிய நிகழ்வு
+          </button>
+        </div>
+        <select id="eventSelect" onchange="handleEventChange()" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+          <option value="">-- நிகழ்வு இல்லை --</option>
+        </select>
+
+        <div id="newEventForm" class="hidden space-y-2.5 p-3 rounded-md border border-accent-100 bg-accent-50/50">
+          <input type="text" id="newEventName" placeholder="நிகழ்வு பெயர் (எ.கா. திருமணம்)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="newEventDate" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <input type="text" id="newEventPlace" placeholder="இடம் (மண்டபம்)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          </div>
+          <input type="text" id="newEventLocation" placeholder="ஊர் (விருப்பத்திற்குரியது)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <div class="flex gap-2">
+            <button type="button" onclick="submitNewEvent()" class="flex-1 px-3 py-2 bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold rounded-md transition-colors">சேமிக்கவும்</button>
+            <button type="button" onclick="toggleNewEventForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">ரத்து</button>
+          </div>
+        </div>
+
+        <div id="receiverLockedDisplay" class="hidden rounded-md border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800">
+          பெறுநர் (பூட்டப்பட்டது): <strong id="receiverLockedName"></strong>
+        </div>
+
+        <div id="receiverPickerWrapper" class="hidden">
+          <label for="receiverSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">பெறுநரைத் தேர்ந்தெடுக்கவும்</label>
+          <select id="receiverSelect" onchange="updateEventStatusBar()" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+            <option value="">-- பெறுநர் இல்லை --</option>
+          </select>
+        </div>
+
+        <button type="button" onclick="closeEventModal()" class="w-full px-4 py-2.5 bg-accent-600 hover:bg-accent-700 text-white text-sm font-semibold rounded-md transition-colors">முடிந்தது (Done)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Last Receipt Modal: on-screen preview of the most recently auto-printed receipt, so it can be reviewed/reprinted without a physical printer. -->
+  <div id="lastReceiptModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeLastReceiptModalOnBackdrop(event)">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mt-10 overflow-hidden" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div>
+          <h3 class="text-sm font-semibold font-serif text-slate-900">கடைசி ரசீது</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Last Receipt Preview</p>
+        </div>
+        <button type="button" onclick="closeLastReceiptModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div id="lastReceiptModalBody" class="p-5 text-sm"></div>
+
+      <div class="px-5 pb-5 flex gap-2">
+        <button type="button" onclick="reprintLastReceipt()" class="flex-1 px-3 py-2 bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold rounded-md transition-colors">🖨 மீண்டும் அச்சிடு (Print)</button>
+        <button type="button" onclick="closeLastReceiptModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">மூடு</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Modal: find an existing family to edit (triggered by the தேடு button on the form) -->
+  <div id="searchModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeSearchModalOnBackdrop(event)">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mt-6 overflow-hidden" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+        <div class="flex items-center gap-2">
+          <h3 class="text-sm font-semibold font-serif text-slate-900">குடும்பத்தைத் தேடவும்</h3>
+          <span id="userCountBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">0</span>
+        </div>
+        <button type="button" onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-3">
+        <form onsubmit="handleSearchSubmit(event)" class="flex flex-col sm:flex-row gap-2.5 items-stretch">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <input 
+              type="text" 
+              id="searchInput" 
+              placeholder="பெயர், போன் அல்லது இடத்தால் தேடவும்..." 
+              class="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 text-slate-900 shadow-xs"
+            >
+          </div>
+          <div class="flex gap-2">
+            <button 
+              type="submit" 
+              id="searchBtn"
+              class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-700 transition-colors">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              தேடவும்
+            </button>
+            <button 
+              type="button" 
+              onclick="resetSearch()" 
+              id="resetSearchBtn"
+              class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium rounded-md border border-slate-200 transition-colors"
+              title="தேடலை அழித்து அனைத்தையும் காட்டவும்">
+              மீட்டமை
+            </button>
+          </div>
+        </form>
+
+        <div id="searchFilterTag" class="hidden pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span>வடிகட்டப்பட்டது: <strong id="currentSearchTerm" class="text-slate-800 font-mono"></strong></span>
+          <button onclick="resetSearch()" class="text-accent-700 hover:underline">வடிகட்டியை அழிக்கவும்</button>
+        </div>
+
+        <div id="tableLoading" class="hidden p-8 text-center">
+          <svg class="animate-spin h-6 w-6 text-brand-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs text-slate-500 font-medium">விவரங்களை ஏற்றுகிறது...</p>
+        </div>
+
+        <div id="tableError" class="hidden p-6 text-center bg-red-50/60 rounded-lg border border-red-100">
+          <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <h4 class="text-xs font-semibold text-red-800">இணைப்பு தோல்வியடைந்தது</h4>
+          <p id="tableErrorMessage" class="text-xs text-red-600 mt-1 max-w-md mx-auto break-words font-mono"></p>
+          <button onclick="loadUsers()" class="mt-3 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-medium rounded transition-colors">மீண்டும் முயற்சிக்கவும்</button>
+        </div>
+
+        <div id="tableEmpty" class="hidden p-10 text-center">
+          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <h4 class="text-sm font-semibold text-slate-800">பதிவுகள் இல்லை</h4>
+          <p id="tableEmptySub" class="text-xs text-slate-500 mt-1">பொருந்தக்கூடிய பதிவுகள் இல்லை அல்லது தரவுத்தளம் காலியாக உள்ளது.</p>
+        </div>
+
+        <div class="overflow-x-auto max-h-96 overflow-y-auto rounded-lg border border-slate-100">
+          <table id="usersTable" class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                <th scope="col" class="py-3 px-4 w-16">வ.எண்</th>
+                <th scope="col" class="py-3 px-4">கணவர்</th>
+                <th scope="col" class="py-3 px-4">போன்</th>
+                <th scope="col" class="py-3 px-4">இருப்பு</th>
+                <th scope="col" class="py-3 px-4 text-right w-24">செயல்</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-slate-100 text-slate-800">
+              <!-- Dynamically populated rows via loadUsers() or searchUsers() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: API IMPLEMENTATION & STATE     -->
+  <!-- ========================================== -->
+  <script>
+    /**
+     * E TO E User Management - API Client
+     * BASE_URL auto-detects: local (127.0.0.1/localhost) -> http://127.0.0.1:8001 directly.
+     * Opened via a dev tunnel (...devtunnels.ms) -> same tunnel host with the port segment swapped to 8001,
+     * so this one file works correctly both for local use and for anyone opening the shared tunnel link.
+     */
+    const BASE_URL = window.API_BASE_URL || (() => {
+      const { hostname, protocol } = window.location;
+      if (hostname === '127.0.0.1' || hostname === 'localhost') {
+        return 'http://127.0.0.1:8001';
+      }
+      const tunnelHostname = hostname.replace(/-\d+(?=\.)/, '-8001');
+      return `${protocol}//${tunnelHostname}`;
+    })();
+
+    // In-memory cache of currently loaded users for quick access when editing
+    let currentUsersList = [];
+    let isEditMode = false;
+    let phoneLookupTimer = null;
+    let lastPhoneLookup = '';
+
+    // =========================================================================
+    // Staff Login: gates the whole Admin Panel. Each counter/admin has their own
+    // PIN; the session persists in localStorage so a counter stays logged in all day.
+    // =========================================================================
+    const STAFF_SESSION_KEY = 'eToE_staff_session';
+    let currentStaff = null; // { staff_id, display_name, role, session_token }
+
+    function loadStoredStaffSession() {
+      try {
+        const raw = localStorage.getItem(STAFF_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function authHeaders() {
+      return currentStaff ? { 'Authorization': `Bearer ${currentStaff.session_token}` } : {};
+    }
+
+    // Role tabs on the login card: purely a UX hint to reduce mix-ups between the Admin and
+    // Counter PINs. The real role always comes from the server; a mismatch is rejected on submit.
+    let selectedLoginRole = 'counter';
+
+    function selectLoginRole(role) {
+      selectedLoginRole = role;
+      const activeClass = 'flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md transition-colors bg-white text-brand-700 shadow-sm';
+      const inactiveClass = 'flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md transition-colors text-slate-500 hover:text-slate-700';
+      document.getElementById('loginRoleAdminBtn').className = role === 'admin' ? activeClass : inactiveClass;
+      document.getElementById('loginRoleCounterBtn').className = role === 'counter' ? activeClass : inactiveClass;
+      document.getElementById('staffPinLabel').textContent = role === 'admin' ? 'நிர்வாகி PIN ஐ உள்ளிடவும்' : 'கவுண்டர் PIN ஐ உள்ளிடவும்';
+      document.getElementById('staffLoginError').classList.add('hidden');
+    }
+
+    function showStaffLoginOverlay(message = '') {
+      document.getElementById('staffLoginOverlay').classList.remove('hidden');
+      selectLoginRole('counter');
+      const errorEl = document.getElementById('staffLoginError');
+      if (message) {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+      } else {
+        errorEl.classList.add('hidden');
+      }
+      document.getElementById('staffPinInput').value = '';
+      document.getElementById('staffPinInput').focus();
+    }
+
+    function hideStaffLoginOverlay() {
+      document.getElementById('staffLoginOverlay').classList.add('hidden');
+    }
+
+    async function handleStaffLogin(event) {
+      event.preventDefault();
+      const pin = document.getElementById('staffPinInput').value.trim();
+      if (!pin) return;
+      try {
+        const response = await fetch(`${BASE_URL}/staff/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ pin }),
+        });
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.detail || 'தவறான PIN.');
+        }
+        const staff = await response.json();
+        if (staff.role !== selectedLoginRole) {
+          await fetch(`${BASE_URL}/staff/logout`, { method: 'POST', headers: { 'Authorization': `Bearer ${staff.session_token}` } }).catch(() => {});
+          const expectedTab = selectedLoginRole === 'admin' ? 'நிர்வாகி (Admin)' : 'கவுண்டர் (Counter)';
+          throw new Error(`இந்த PIN "${expectedTab}" தாவலுக்கு சொந்தமானது அல்ல. சரியான தாவலைத் தேர்ந்தெடுக்கவும்.`);
+        }
+        currentStaff = staff;
+        localStorage.setItem(STAFF_SESSION_KEY, JSON.stringify(currentStaff));
+        hideStaffLoginOverlay();
+        applyStaffUiForRole();
+        initializeAppAfterLogin();
+      } catch (error) {
+        const errorEl = document.getElementById('staffLoginError');
+        errorEl.textContent = error.message;
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    async function handleStaffLogout() {
+      try {
+        await fetch(`${BASE_URL}/staff/logout`, { method: 'POST', headers: { ...authHeaders() } });
+      } catch (error) {
+        // Logout is best-effort; the client-side session is cleared regardless.
+      }
+      currentStaff = null;
+      localStorage.removeItem(STAFF_SESSION_KEY);
+      document.getElementById('staffBadge').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
+      document.getElementById('myCollectionsToggleBtn').classList.add('hidden');
+      document.getElementById('adminCountersToggleBtn').classList.add('hidden');
+      resetToggledPanels();
+      showStaffLoginOverlay();
+    }
+
+    // Closes every show/hide toggle panel so no leftover UI state (e.g. the admin panel being
+    // left open) carries over when a different person logs in on the same device/browser.
+    function resetToggledPanels() {
+      document.getElementById('myCollectionsPanel').classList.add('hidden');
+      document.getElementById('adminCountersPanel').classList.add('hidden');
+      document.getElementById('createStaffForm').classList.add('hidden');
+      document.getElementById('denominationSummaryPanel').classList.add('hidden');
+    }
+
+    // Called once after a successful login (fresh or restored from localStorage) to populate the main app.
+    function initializeAppAfterLogin() {
+      loadUsers();
+      loadNextSerialNumber();
+      loadEvents();
+    }
+
+    function applyStaffUiForRole() {
+      resetToggledPanels();
+      document.getElementById('staffBadge').classList.remove('hidden');
+      document.getElementById('staffNameText').textContent = `${currentStaff.display_name} (${currentStaff.role === 'admin' ? 'நிர்வாகி' : 'கவுண்டர்'})`;
+      document.getElementById('logoutBtn').classList.remove('hidden');
+      document.getElementById('myCollectionsToggleBtn').classList.remove('hidden');
+      // Admin-only panel: never shown to a counter login, regardless of leftover state from a prior session.
+      document.getElementById('adminCountersToggleBtn').classList.toggle('hidden', currentStaff.role !== 'admin');
+    }
+
+    // Wraps fetch(): merges the staff bearer token into every protected call, and if the
+    // server says our session is invalid/expired, boots back to the login screen automatically.
+    async function authFetch(url, options = {}) {
+      const response = await fetch(url, {
+        ...options,
+        headers: { ...(options.headers || {}), ...authHeaders() },
+      });
+      if (response.status === 401) {
+        currentStaff = null;
+        localStorage.removeItem(STAFF_SESSION_KEY);
+        showStaffLoginOverlay('அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்.');
+      }
+      return response;
+    }
+
+    // Run on page load: restore a saved staff session (if any), then load all users and check backend readiness.
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDenominationRows();
+      recalculateTally();
+      document.getElementById('phoneNumber').addEventListener('input', handlePhoneInput);
+      document.getElementById('husbandName').addEventListener('blur', handleHusbandNameBlur);
+      document.getElementById('wifeName').addEventListener('blur', handleWifeNameBlur);
+      document.getElementById('pasteDetails').addEventListener('blur', handlePasteDetails);
+      document.getElementById('amount').addEventListener('input', recalculateTally);
+      document.getElementById('amount').addEventListener('keydown', handleAmountKeydown);
+
+      try {
+        const raw = localStorage.getItem(LAST_RECEIPT_KEY);
+        if (raw) lastReceiptData = JSON.parse(raw);
+      } catch (error) {
+        lastReceiptData = null;
+      }
+
+      currentStaff = loadStoredStaffSession();
+      if (currentStaff) {
+        hideStaffLoginOverlay();
+        applyStaffUiForRole();
+        initializeAppAfterLogin();
+      } else {
+        showStaffLoginOverlay();
+      }
+    });
+
+    // Ctrl+S (or Cmd+S) saves the form; Ctrl+E opens the Event & Receiver picker; Ctrl+Enter confirms the tallied contribution. Escape closes whichever modal is open.
+    document.addEventListener('keydown', (event) => {
+      const isSaveShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
+      if (isSaveShortcut) {
+        event.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        if (!submitBtn.disabled) {
+          submitBtn.click();
+        }
+        return;
+      }
+      const isConfirmShortcut = (event.ctrlKey || event.metaKey) && event.key === 'Enter';
+      if (isConfirmShortcut) {
+        event.preventDefault();
+        if (groupModeActive) {
+          confirmGroupBatch();
+        } else {
+          confirmTally();
+        }
+        return;
+      }
+      const isEventShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'e';
+      if (isEventShortcut) {
+        event.preventDefault();
+        openEventModal();
+        return;
+      }
+      const isGroupShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'g';
+      if (isGroupShortcut) {
+        event.preventDefault();
+        toggleGroupMode();
+        return;
+      }
+      if (event.key === 'Escape') {
+        closeSearchModal();
+        closeEventModal();
+        closeLastReceiptModal();
+      }
+    });
+
+    // Shows the existing-families search/table inside a modal so it no longer occupies the main layout.
+    function openSearchModal() {
+      document.getElementById('searchModalOverlay').classList.remove('hidden');
+      document.getElementById('searchInput').focus();
+    }
+
+    function closeSearchModal() {
+      document.getElementById('searchModalOverlay').classList.add('hidden');
+    }
+
+    function closeSearchModalOnBackdrop(event) {
+      if (event.target.id === 'searchModalOverlay') {
+        closeSearchModal();
+      }
+    }
+
+    // Shows the Event & Receiver picker in a modal (Ctrl+E) so it only occupies the page while in use.
+    function openEventModal() {
+      document.getElementById('eventModalOverlay').classList.remove('hidden');
+      document.getElementById('eventSelect').focus();
+    }
+
+    function closeEventModal() {
+      document.getElementById('eventModalOverlay').classList.add('hidden');
+    }
+
+    function closeEventModalOnBackdrop(event) {
+      if (event.target.id === 'eventModalOverlay') {
+        closeEventModal();
+      }
+    }
+
+    // =========================================================================
+    // Event & Receiver: lets the admin pick/create the event a contribution
+    // belongs to, and resolves the receiver (locked event host, or a manual pick).
+    // =========================================================================
+    let currentEventsList = [];
+    let lastSavedContributorId = null;
+    let lastSavedContributorName = '';
+
+    // Auto-printed receipt: kept in localStorage so it can be re-viewed/reprinted even after a page reload,
+    // since there's no physical printer here to verify output against — this is the only way to check it.
+    const LAST_RECEIPT_KEY = 'eToE_last_receipt';
+    let lastReceiptData = null;
+
+    // Group Mode: Ctrl+S on the main form adds the currently-filled-in person (profile + Amount) to this
+    // batch instead of just saving their profile; Ctrl+Enter posts every person's contribution at once.
+    let groupModeActive = false;
+    let groupBatch = []; // [{ contributorId, name, phone, amount }]
+
+    async function loadEvents(selectEventId = null) {
+      try {
+        const response = await authFetch(`${BASE_URL}/events`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) return;
+        currentEventsList = await response.json();
+
+        const select = document.getElementById('eventSelect');
+        const previousValue = selectEventId !== null ? String(selectEventId) : select.value;
+        select.innerHTML = '<option value="">-- நிகழ்வு இல்லை --</option>' +
+          currentEventsList.map(event => `<option value="${event.event_id}">${escapeHtml(event.event_name)} \u2014 ${event.event_date}</option>`).join('');
+        if (previousValue && currentEventsList.some(event => String(event.event_id) === previousValue)) {
+          select.value = previousValue;
+        }
+        handleEventChange();
+      } catch (error) {
+        // Event list is best-effort; Confirm is simply blocked if none is selected.
+      }
+    }
+
+    function toggleNewEventForm() {
+      document.getElementById('newEventForm').classList.toggle('hidden');
+    }
+
+    async function submitNewEvent() {
+      const eventName = document.getElementById('newEventName').value.trim();
+      const eventDate = document.getElementById('newEventDate').value;
+      const eventPlace = document.getElementById('newEventPlace').value.trim();
+      const eventLocation = document.getElementById('newEventLocation').value.trim();
+
+      if (!eventName || !eventDate) {
+        showGlobalAlert('நிகழ்வு பெயரும் தேதியும் கட்டாயம்.', 'error');
+        return;
+      }
+
+      try {
+        const response = await authFetch(`${BASE_URL}/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            event_name: eventName,
+            event_date: eventDate,
+            event_place: eventPlace || null,
+            event_location: eventLocation || null,
+          }),
+        });
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.detail || `Server returned ${response.status}`);
+        }
+        const newEvent = await response.json();
+        document.getElementById('newEventName').value = '';
+        document.getElementById('newEventDate').value = '';
+        document.getElementById('newEventPlace').value = '';
+        document.getElementById('newEventLocation').value = '';
+        document.getElementById('newEventForm').classList.add('hidden');
+        showGlobalAlert(`நிகழ்வு "${newEvent.event_name}" உருவாக்கப்பட்டது.`, 'success');
+        await loadEvents(newEvent.event_id);
+      } catch (error) {
+        showGlobalAlert(`நிகழ்வு உருவாக்க முடியவில்லை: ${error.message}`, 'error');
+      }
+    }
+
+    // Shows the locked event host, or a manual receiver picker when the event has none yet.
+    function handleEventChange() {
+      const eventId = document.getElementById('eventSelect').value;
+      const lockedDisplay = document.getElementById('receiverLockedDisplay');
+      const lockedName = document.getElementById('receiverLockedName');
+      const pickerWrapper = document.getElementById('receiverPickerWrapper');
+      const receiverSelect = document.getElementById('receiverSelect');
+
+      lockedDisplay.classList.add('hidden');
+      pickerWrapper.classList.add('hidden');
+
+      if (!eventId) return;
+      const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
+      if (!selectedEvent) return;
+
+      if (selectedEvent.host_user_id) {
+        const host = currentUsersList.find(user => user.id === selectedEvent.host_user_id);
+        lockedName.textContent = host ? `${host.husband_name} | ${host.phone_number}` : `#${selectedEvent.host_user_id}`;
+        lockedDisplay.classList.remove('hidden');
+      } else {
+        const previouslySelectedReceiver = receiverSelect.value;
+        receiverSelect.innerHTML = '<option value="">-- பெறுநர் இல்லை --</option>' +
+          currentUsersList
+            .filter(user => user.id !== lastSavedContributorId)
+            .map(user => `<option value="${user.id}">${escapeHtml(user.husband_name)} | ${escapeHtml(user.phone_number)}</option>`)
+            .join('');
+        // Re-saving/switching the contributor rebuilds this list — keep whatever receiver was already picked, if still valid.
+        if (previouslySelectedReceiver && [...receiverSelect.options].some(option => option.value === previouslySelectedReceiver)) {
+          receiverSelect.value = previouslySelectedReceiver;
+        }
+        pickerWrapper.classList.remove('hidden');
+      }
+      updateEventStatusBar();
+      loadEventContributors();
+      loadNextSerialNumber();
+      refreshDenominationSummaryIfOpen();
+      refreshMyCollectionsIfOpen();
+      refreshAdminCountersIfOpen();
+    }
+
+    // My Collections: hidden by default; shows only what THIS logged-in counter has recorded.
+    function toggleMyCollections() {
+      const panel = document.getElementById('myCollectionsPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        loadMyCollections();
+      }
+    }
+
+    function refreshMyCollectionsIfOpen() {
+      const panel = document.getElementById('myCollectionsPanel');
+      if (!panel.classList.contains('hidden')) {
+        loadMyCollections();
+      }
+    }
+
+    async function loadMyCollections() {
+      const eventId = document.getElementById('eventSelect').value;
+      const body = document.getElementById('myCollectionsBody');
+      const totalEl = document.getElementById('myCollectionsTotal');
+      if (!eventId) {
+        totalEl.textContent = '₹0';
+        body.innerHTML = '<p class="text-slate-400">முதலில் ஒரு நிகழ்வைத் தேர்ந்தெடுக்கவும்.</p>';
+        return;
+      }
+      body.innerHTML = '<p class="text-slate-400">ஏற்றப்படுகிறது...</p>';
+      try {
+        const response = await authFetch(`${BASE_URL}/staff/me/collections?event_id=${eventId}`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Could not load');
+        const rows = await response.json();
+        const total = rows.reduce((sum, row) => sum + Number(row.amount), 0);
+        totalEl.textContent = formatRupees(total);
+        body.innerHTML = rows.length
+          ? rows.map(row => `
+            <div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+              <span class="font-semibold text-slate-700">${escapeHtml(row.contributor_name)}</span>
+              <span class="font-semibold text-slate-800">${formatRupees(Number(row.amount))}</span>
+            </div>`).join('')
+          : '<p class="text-slate-400">இதுவரை பதிவுகள் இல்லை.</p>';
+      } catch (error) {
+        body.innerHTML = '<p class="text-red-500">ஏற்ற முடியவில்லை.</p>';
+      }
+    }
+
+    // Admin-only: totals across all counters, plus a quick way to create new counter logins.
+    function toggleAdminCounters() {
+      if (!currentStaff || currentStaff.role !== 'admin') return;
+      const panel = document.getElementById('adminCountersPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        loadAdminCountersSummary();
+      }
+    }
+
+    function refreshAdminCountersIfOpen() {
+      const panel = document.getElementById('adminCountersPanel');
+      if (!panel.classList.contains('hidden')) {
+        loadAdminCountersSummary();
+      }
+    }
+
+    async function loadAdminCountersSummary() {
+      const eventId = document.getElementById('eventSelect').value;
+      const body = document.getElementById('adminCountersBody');
+      body.innerHTML = '<p class="text-slate-400">ஏற்றப்படுகிறது...</p>';
+      try {
+        const summaryUrl = eventId
+          ? `${BASE_URL}/staff/collections-summary?event_id=${eventId}`
+          : `${BASE_URL}/staff/collections-summary`;
+        const denomUrl = eventId
+          ? `${BASE_URL}/staff/collections-denomination-summary?event_id=${eventId}`
+          : `${BASE_URL}/staff/collections-denomination-summary`;
+        const [summaryResponse, denomResponse] = await Promise.all([
+          authFetch(summaryUrl, { headers: { 'Accept': 'application/json' } }),
+          authFetch(denomUrl, { headers: { 'Accept': 'application/json' } }),
+        ]);
+        if (!summaryResponse.ok || !denomResponse.ok) throw new Error('Could not load');
+        const rows = await summaryResponse.json();
+        const denomRows = await denomResponse.json();
+        const denomsByStaff = {};
+        denomRows.forEach(row => { denomsByStaff[row.staff_id] = row.denominations || {}; });
+
+        body.innerHTML = rows.length
+          ? rows.map(row => {
+              const denominations = denomsByStaff[row.staff_id] || {};
+              const denomLine = DENOMINATIONS
+                .filter(value => (denominations[value] ?? denominations[String(value)]) > 0)
+                .map(value => `₹${value}×${denominations[value] ?? denominations[String(value)]}`)
+                .join('  ');
+              return `
+                <div class="py-1.5 border-b border-slate-50 last:border-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-semibold text-slate-700 truncate">${escapeHtml(row.display_name)}</span>
+                    <span class="text-slate-500 whitespace-nowrap">${row.contribution_count} பதிவுகள்</span>
+                    <span class="font-semibold text-slate-800 whitespace-nowrap">${formatRupees(Number(row.total_amount))}</span>
+                  </div>
+                  ${denomLine ? `<div class="text-[10px] text-slate-400 mt-0.5 font-mono">${denomLine}</div>` : ''}
+                </div>`;
+            }).join('')
+          : '<p class="text-slate-400">கவுண்டர்கள் இல்லை.</p>';
+      } catch (error) {
+        body.innerHTML = '<p class="text-red-500">ஏற்ற முடியவில்லை.</p>';
+      }
+    }
+
+    function toggleCreateStaffForm() {
+      document.getElementById('createStaffForm').classList.toggle('hidden');
+    }
+
+    async function submitNewStaff() {
+      const displayName = document.getElementById('newStaffName').value.trim();
+      const pin = document.getElementById('newStaffPin').value.trim();
+      const role = document.getElementById('newStaffRole').value;
+      if (!displayName || !pin) {
+        showGlobalAlert('பெயரும் PIN ஐ கட்டாயம் நிரப்பவும்.', 'error');
+        return;
+      }
+      try {
+        const response = await authFetch(`${BASE_URL}/staff/accounts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ display_name: displayName, pin, role }),
+        });
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.detail || `Server returned ${response.status}`);
+        }
+        document.getElementById('newStaffName').value = '';
+        document.getElementById('newStaffPin').value = '';
+        document.getElementById('newStaffRole').value = 'counter';
+        document.getElementById('createStaffForm').classList.add('hidden');
+        showGlobalAlert('புதிய கவுண்டர் உருவாக்கப்பட்டது.', 'success');
+        loadAdminCountersSummary();
+      } catch (error) {
+        showGlobalAlert(`கவுண்டரை உருவாக்க முடியவில்லை: ${error.message}`, 'error');
+      }
+    }
+
+    // Denomination Summary: hidden by default; toggled on demand so it doesn't clutter the main screen.
+    function toggleDenominationSummary() {
+      const panel = document.getElementById('denominationSummaryPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        loadDenominationSummary();
+      }
+    }
+
+    function refreshDenominationSummaryIfOpen() {
+      const panel = document.getElementById('denominationSummaryPanel');
+      if (!panel.classList.contains('hidden')) {
+        loadDenominationSummary();
+      }
+    }
+
+    async function loadDenominationSummary() {
+      const eventId = document.getElementById('eventSelect').value;
+      const body = document.getElementById('denominationSummaryBody');
+      if (!eventId) {
+        document.getElementById('denominationSummaryTotal').textContent = '₹0';
+        body.innerHTML = '<p class="text-slate-400">முதலில் ஒரு நிகழ்வைத் தேர்ந்தெடுக்கவும்.</p>';
+        return;
+      }
+      body.innerHTML = '<p class="text-slate-400">ஏற்றப்படுகிறது...</p>';
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/denomination-summary`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Could not load summary');
+        const summary = await response.json();
+        document.getElementById('denominationSummaryTotal').textContent = formatRupees(summary.total_amount);
+        const rows = DENOMINATIONS.map(value => {
+          const count = summary.denominations?.[value] ?? summary.denominations?.[String(value)] ?? 0;
+          return `<div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+            <span class="font-semibold text-slate-700">₹${value}</span>
+            <span class="text-slate-500">${count} நோட்டுகள்</span>
+            <span class="font-semibold text-slate-800">${formatRupees(value * count)}</span>
+          </div>`;
+        }).join('');
+        body.innerHTML = rows;
+      } catch (error) {
+        body.innerHTML = '<p class="text-red-500">சுருக்கத்தை ஏற்ற முடியவில்லை.</p>';
+      }
+    }
+
+    // Keeps the compact header bar in sync with whatever is selected inside the Event & Receiver modal.
+    function updateEventStatusBar() {
+      const eventId = document.getElementById('eventSelect').value;
+      const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
+      const eventStatusText = document.getElementById('eventStatusText');
+      const receiverStatusText = document.getElementById('receiverStatusText');
+
+      eventStatusText.textContent = selectedEvent ? `${selectedEvent.event_name} — ${selectedEvent.event_date}` : 'தேர்ந்தெடுக்கப்படவில்லை';
+
+      const receiverId = getSelectedReceiverId();
+      const receiver = receiverId ? currentUsersList.find(user => user.id === receiverId) : null;
+      receiverStatusText.textContent = receiver ? `${receiver.husband_name} | ${receiver.phone_number}` : '—';
+    }
+
+    function getSelectedReceiverId() {
+      const eventId = document.getElementById('eventSelect').value;
+      const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
+      if (!selectedEvent) return null;
+      if (selectedEvent.host_user_id) return selectedEvent.host_user_id;
+      const receiverValue = document.getElementById('receiverSelect').value;
+      return receiverValue ? Number(receiverValue) : null;
+    }
+
+    // Tracks which saved family the next Confirm (contribution) should credit as the contributor.
+    function setActiveContributor(id, name) {
+      lastSavedContributorId = id;
+      lastSavedContributorName = name;
+      const label = document.getElementById('activeContributorLabel');
+      label.textContent = id
+        ? `பணம் செலுத்துபவர் / Contributor: ${name} (#${id})`
+        : 'புதிய குடும்பத்தின் போன் & கணவர் பெயரை நிரப்பி நேரடியாக உறுதி செய்யவும் (Ctrl+Enter).';
+      handleEventChange();
+    }
+
+    // =========================================================================
+    // Cash Denomination Tally: counts notes and compares the total against
+    // the frontend-only Amount field. Nothing here is sent to the backend.
+    // =========================================================================
+    const DENOMINATIONS = [1, 500, 200, 100, 50, 20, 10];
+    const DENOMINATION_COLORS = {
+      1: 'bg-rose-100 text-rose-700',
+      500: 'bg-slate-200 text-slate-700',
+      200: 'bg-orange-100 text-orange-700',
+      100: 'bg-violet-100 text-violet-700',
+      50: 'bg-cyan-100 text-cyan-700',
+      20: 'bg-yellow-100 text-yellow-700',
+      10: 'bg-lime-100 text-lime-700'
+    };
+    let denominationCounts = { 1: 0, 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0 };
+
+    function formatRupees(amount) {
+      const safeAmount = Number.isFinite(amount) ? amount : 0;
+      return '\u20b9' + safeAmount.toLocaleString('en-IN');
+    }
+
+    function renderDenominationRows() {
+      const container = document.getElementById('denominationRows');
+      container.innerHTML = DENOMINATIONS.map(value => `
+        <div class="flex items-center justify-between px-5 py-3 gap-3 flex-wrap">
+          <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold w-20 ${DENOMINATION_COLORS[value]}">\u20b9 ${value}</span>
+          <div class="flex items-center gap-2">
+            <button type="button" tabindex="-1" onclick="adjustDenomination(${value}, -1)" class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">-</button>
+            <input type="number" min="0" id="denomCount${value}" value="0" oninput="handleDenominationInput(${value}, this.value)" class="w-16 text-center rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold">
+            <button type="button" tabindex="-1" onclick="adjustDenomination(${value}, 1)" class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">+</button>
+          </div>
+          <div class="text-sm font-bold text-slate-900 w-24 text-right" id="denomSubtotal${value}">\u20b90</div>
+        </div>
+      `).join('');
+    }
+
+    function adjustDenomination(value, delta) {
+      const nextCount = Math.max(0, (denominationCounts[value] || 0) + delta);
+      denominationCounts[value] = nextCount;
+      document.getElementById(`denomCount${value}`).value = nextCount;
+      recalculateTally();
+    }
+
+    function handleDenominationInput(value, rawCount) {
+      const count = Math.max(0, parseInt(rawCount, 10) || 0);
+      denominationCounts[value] = count;
+      recalculateTally();
+    }
+
+    // Greedy-fills note counts from the Amount field. Computed highest-value-first regardless of the
+    // DENOMINATIONS display order above (₹1 is shown on top but must be filled last, or it would
+    // swallow the entire remaining amount as ₹1 notes).
+    function autoFillDenominations() {
+      let remaining = Math.max(0, Math.round(Number(document.getElementById('amount').value) || 0));
+      const greedyOrder = [...DENOMINATIONS].sort((a, b) => b - a);
+      greedyOrder.forEach(value => {
+        const count = Math.floor(remaining / value);
+        denominationCounts[value] = count;
+        remaining -= count * value;
+        document.getElementById(`denomCount${value}`).value = count;
+      });
+      recalculateTally();
+    }
+
+    function zeroOutDenominations() {
+      DENOMINATIONS.forEach(value => {
+        denominationCounts[value] = 0;
+        const input = document.getElementById(`denomCount${value}`);
+        if (input) input.value = 0;
+      });
+      recalculateTally();
+    }
+
+    function recalculateTally() {
+      let cashCounted = 0;
+      DENOMINATIONS.forEach(value => {
+        const subtotal = (denominationCounts[value] || 0) * value;
+        cashCounted += subtotal;
+        const subtotalEl = document.getElementById(`denomSubtotal${value}`);
+        if (subtotalEl) subtotalEl.textContent = formatRupees(subtotal);
+      });
+
+      // In Group Mode, the committed batch total is what actually gets posted/compared at Confirm —
+      // not whatever's currently typed in Amount for the next (not-yet-saved) person.
+      const formAmount = groupModeActive
+        ? groupBatch.reduce((sum, entry) => sum + entry.amount, 0)
+        : Math.round(Number(document.getElementById('amount').value) || 0);
+      document.getElementById('formAmountDisplay').textContent = formatRupees(formAmount);
+      document.getElementById('cashCountedDisplay').textContent = formatRupees(cashCounted);
+
+      const variance = cashCounted - formAmount;
+      const varianceBox = document.getElementById('varianceBox');
+      const varianceDisplay = document.getElementById('varianceDisplay');
+
+      if (variance === 0) {
+        varianceBox.className = 'rounded-lg border p-2.5 border-emerald-300 bg-[#7ef0a6]';
+        varianceDisplay.className = 'text-lg font-bold text-emerald-900';
+        varianceDisplay.textContent = formatRupees(0);
+      } else {
+        varianceBox.className = 'rounded-lg border p-2.5 border-red-300 bg-red-50';
+        varianceDisplay.className = 'text-lg font-bold text-red-600';
+        varianceDisplay.textContent = `${variance > 0 ? '+' : '-'}${formatRupees(Math.abs(variance))}`;
+      }
+    }
+
+    // Manual print button: reprints the most recent auto-generated receipt if one exists, otherwise
+    // falls back to a plain browser print (nothing useful to show on the receipt layout yet).
+    function printTallySlip() {
+      if (lastReceiptData) {
+        reprintLastReceipt();
+      } else {
+        window.print();
+      }
+    }
+
+    async function confirmTally() {
+      const formAmount = Math.round(Number(document.getElementById('amount').value) || 0);
+      const cashCounted = DENOMINATIONS.reduce((total, value) => total + (denominationCounts[value] || 0) * value, 0);
+
+      if (formAmount <= 0) {
+        showGlobalAlert('தொகை பூஜ்யிவை விட அதிகமாக இருக்க வேண்டும்.', 'error');
+        return;
+      }
+      if (cashCounted !== formAmount) {
+        showGlobalAlert('சரிபார்ப்பு தோல்வி: தொகையும் எண்ணிய ரொக்கமும் பொருந்தவில்லை.', 'error');
+        return;
+      }
+      const eventId = document.getElementById('eventSelect').value;
+      if (!eventId) {
+        showGlobalAlert('நிகழ்வைத் தேர்ந்தெடுக்கவும்.', 'error');
+        return;
+      }
+      const receiverId = getSelectedReceiverId();
+      if (!receiverId) {
+        showGlobalAlert('பெறுநரைத் தேர்ந்தெடுக்கவும்.', 'error');
+        return;
+      }
+
+      // One-shot flow: if this family hasn't been saved yet, create them now (no separate Ctrl+S step needed)
+      // as long as the required fields (phone, husband name) are filled in.
+      if (!lastSavedContributorId) {
+        const payload = buildUserPayloadFromForm();
+        if (!payload) {
+          showGlobalAlert('முதலில் போன் எண் & கணவர் பெயரை நிரப்பவும்.', 'error');
+          return;
+        }
+        const serialNumberValue = Number(document.getElementById('serialNumber').value);
+        try {
+          const response = await authFetch(`${BASE_URL}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null }),
+          });
+          if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            throw new Error(errJson.detail || `Server returned ${response.status}`);
+          }
+          const newUserData = await response.json();
+          setActiveContributor(newUserData.id, payload.husband_name);
+        } catch (error) {
+          showGlobalAlert(`குடும்பத்தைச் சேமிக்க முடியவில்லை: ${error.message}`, 'error');
+          return;
+        }
+      }
+
+      if (receiverId === lastSavedContributorId) {
+        showGlobalAlert('கொடுப்பவரும் பெறுபவரும் ஒரே குடும்பமாக இருக்க முடியாது.', 'error');
+        return;
+      }
+
+      try {
+        const response = await authFetch(`${BASE_URL}/contributions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            contributor_id: lastSavedContributorId,
+            receiver_id: receiverId,
+            event_id: Number(eventId),
+            amount: formAmount,
+            denominations: denominationCounts,
+          }),
+        });
+
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.detail || `Server returned ${response.status}`);
+        }
+
+        showGlobalAlert(`ரொக்கத் தொகை பதிவு செய்யப்பட்டது: ${formatRupees(cashCounted)}`, 'success');
+
+        // Snapshot everything needed for the receipt BEFORE cancelEdit()/clearForm() wipes the form
+        // and resets the active contributor.
+        const selectedEventForReceipt = currentEventsList.find(event => String(event.event_id) === eventId);
+        const receiverForReceipt = currentUsersList.find(user => user.id === receiverId);
+        recordAndPrintReceipt({
+          isGroup: false,
+          eventName: selectedEventForReceipt?.event_name || '—',
+          eventDate: selectedEventForReceipt?.event_date || '—',
+          hostName: receiverForReceipt ? `${receiverForReceipt.husband_name}${receiverForReceipt.phone_number ? ' | ' + receiverForReceipt.phone_number : ''}` : '—',
+          serialNumber: document.getElementById('serialNumber').value || '—',
+          contributorName: lastSavedContributorName || '—',
+          contributorPhone: document.getElementById('phoneNumber').value || '—',
+          amount: formatRupees(formAmount),
+          receivedBy: currentStaff?.display_name || '—',
+          printedDate: new Date().toLocaleDateString('en-IN'),
+          printedTime: new Date().toLocaleTimeString('en-IN'),
+        });
+
+        cancelEdit();
+        await loadEvents(Number(eventId));
+        refreshMyCollectionsIfOpen();
+        refreshAdminCountersIfOpen();
+        document.getElementById('phoneNumber').focus();
+      } catch (error) {
+        showGlobalAlert(`பங்களிப்பைப் பதிவு செய்ய முடியவில்லை: ${error.message}`, 'error');
+      }
+    }
+
+    // =========================================================================
+    // Receipt printing: builds a simple printable slip (event, date, host, contributor(s), amount)
+    // and opens the browser's print dialog, which also serves as a preview since there's no physical
+    // printer here to test against. The same markup is reused for the on-screen "Last Receipt" viewer.
+    // For a group, one summary page (everyone + total, for the counter's own record) is followed by
+    // one individual slip per person, so each contributing family gets their own proof of payment too.
+    // =========================================================================
+    function buildReceiptFrame(headerHtml, bodyHtml, footerHtml) {
+      return `
+        <div style="max-width:380px;margin:0 auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:#000;">
+          <h2 style="text-align:center;font-size:18px;margin:0 0 2px;">மொய்செய்</h2>
+          <p style="text-align:center;margin:0 0 10px;font-size:11px;">நிகழ்வு பங்களிப்பு ரசீது</p>
+          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
+          ${headerHtml}
+          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
+          ${bodyHtml}
+          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
+          ${footerHtml}
+          <p style="text-align:center;margin-top:10px;font-size:11px;">நன்றி!</p>
+        </div>`;
+    }
+
+    // page-break-after separates printed pages; the dashed top border is just so the on-screen
+    // "Last Receipt" preview also shows a clear divider between consecutive slips.
+    function wrapReceiptPage(innerHtml, isFirst, isLast) {
+      const styles = [];
+      if (!isLast) styles.push('page-break-after:always;');
+      if (!isFirst) styles.push('border-top:2px dashed #ccc;margin-top:16px;padding-top:16px;');
+      return `<div style="${styles.join('')}">${innerHtml}</div>`;
+    }
+
+    function renderReceiptMarkup(data) {
+      const wrap = (label, value) => `<p style="margin:2px 0;"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value ?? '—'))}</p>`;
+      const headerHtml = `
+        ${wrap('நிகழ்வு', data.eventName)}
+        ${wrap('தேதி', data.eventDate)}
+        ${wrap('நடத்துபவர்', data.hostName)}`;
+      const footerHtml = `
+        ${wrap('பதிவு செய்தவர்', data.receivedBy)}
+        ${wrap('அச்சிடப்பட்ட தேதி', data.printedDate)}
+        ${wrap('அச்சிடப்பட்ட நேரம்', data.printedTime)}`;
+
+      if (data.isGroup) {
+        const rows = (data.contributors || []).map(c => `
+          <tr>
+            <td style="padding:3px 6px 3px 0;border-bottom:1px dashed #999;">${escapeHtml(c.name)}</td>
+            <td style="padding:3px 0;border-bottom:1px dashed #999;font-size:11px;color:#555;">${escapeHtml(c.phone)}</td>
+            <td style="padding:3px 0 3px 6px;border-bottom:1px dashed #999;text-align:right;font-weight:600;">${escapeHtml(c.amount)}</td>
+          </tr>`).join('');
+        const summaryBody = `
+          ${wrap('கொண்டு வந்தவர்', data.handedOverBy)}
+          <table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;">
+            <thead>
+              <tr style="border-bottom:1px solid #000;">
+                <th style="text-align:left;padding:3px 6px 3px 0;">பங்களிப்பாளர்</th>
+                <th style="text-align:left;padding:3px 0;">போன்</th>
+                <th style="text-align:right;padding:3px 0 3px 6px;">தொகை</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p style="margin:6px 0;font-size:16px;"><strong>மொத்தம்: ₹${escapeHtml(data.totalAmount)}</strong></p>`;
+
+        const pages = [buildReceiptFrame(headerHtml, summaryBody, footerHtml)];
+        (data.contributors || []).forEach(c => {
+          const personBody = `
+            ${wrap('வரிசை எண்', c.serialNumber)}
+            ${wrap('பங்களிப்பாளர்', c.name)}
+            ${wrap('போன்', c.phone)}
+            <p style="margin:6px 0;font-size:16px;"><strong>தொகை: ₹${escapeHtml(c.amount)}</strong></p>`;
+          pages.push(buildReceiptFrame(headerHtml, personBody, footerHtml));
+        });
+        return pages.map((page, index) => wrapReceiptPage(page, index === 0, index === pages.length - 1)).join('');
+      }
+
+      const singleBody = `
+        ${wrap('வரிசை எண்', data.serialNumber)}
+        ${wrap('பங்களிப்பாளர்', data.contributorName)}
+        ${wrap('போன்', data.contributorPhone)}
+        <p style="margin:6px 0;font-size:16px;"><strong>தொகை: ₹${escapeHtml(data.amount)}</strong></p>`;
+      return buildReceiptFrame(headerHtml, singleBody, footerHtml);
+    }
+
+    function recordAndPrintReceipt(data) {
+      lastReceiptData = data;
+      try { localStorage.setItem(LAST_RECEIPT_KEY, JSON.stringify(data)); } catch (error) { /* best-effort */ }
+      document.getElementById('receiptPrintArea').innerHTML = renderReceiptMarkup(data);
+      requestAnimationFrame(() => window.print());
+    }
+
+    function reprintLastReceipt() {
+      if (!lastReceiptData) return;
+      document.getElementById('receiptPrintArea').innerHTML = renderReceiptMarkup(lastReceiptData);
+      requestAnimationFrame(() => window.print());
+    }
+
+    function openLastReceiptModal() {
+      if (!lastReceiptData) {
+        showGlobalAlert('இன்னும் எந்த ரசீதும் பதிவு செய்யப்படவில்லை.', 'error');
+        return;
+      }
+      document.getElementById('lastReceiptModalBody').innerHTML = renderReceiptMarkup(lastReceiptData);
+      document.getElementById('lastReceiptModalOverlay').classList.remove('hidden');
+    }
+
+    function closeLastReceiptModal() {
+      document.getElementById('lastReceiptModalOverlay').classList.add('hidden');
+    }
+
+    function closeLastReceiptModalOnBackdrop(event) {
+      if (event.target.id === 'lastReceiptModalOverlay') {
+        closeLastReceiptModal();
+      }
+    }
+
+    // =========================================================================
+    // Group Mode: one person hands over cash collected from several families. Staff just reuse the
+    // normal form above — fill one family's full details + their Amount, press Ctrl+S to add them to
+    // the batch (same create/autofill-existing logic as a normal save), then the form clears for the
+    // next person. Once everyone is entered, count the total cash in the Denomination Tally and press
+    // Ctrl+Enter to post every person's contribution at once and print one combined receipt.
+    // =========================================================================
+    function toggleGroupMode() {
+      if (groupModeActive) {
+        if (groupBatch.length > 0) {
+          showGlobalAlert('குழுவில் பதிவுகள் உள்ளன. "முடி" அல்லது "ரத்து" பொத்தானைப் பயன்படுத்தவும்.', 'error');
+          return;
+        }
+        exitGroupMode();
+      } else {
+        enterGroupMode();
+      }
+    }
+
+    function enterGroupMode() {
+      const eventId = document.getElementById('eventSelect').value;
+      if (!eventId) {
+        showGlobalAlert('முதலில் நிகழ்வைத் தேர்ந்தெடுக்கவும் (Ctrl+E).', 'error');
+        return;
+      }
+      const receiverId = getSelectedReceiverId();
+      if (!receiverId) {
+        showGlobalAlert('முதலில் பெறுநரைத் தேர்ந்தெடுக்கவும் (Ctrl+E).', 'error');
+        return;
+      }
+
+      groupModeActive = true;
+      groupBatch = [];
+      document.getElementById('groupHandedOverBy').value = '';
+      updateGroupModeBanner();
+      document.getElementById('groupModeBanner').classList.remove('hidden');
+      cancelEdit();
+      zeroOutDenominations();
+      showGlobalAlert('குழு பயன்முறை இயக்கப்பட்டது. ஒவ்வொரு நபரையும் படிவத்தில் நிரப்பி Ctrl+S அழுத்தவும்.', 'success');
+      document.getElementById('phoneNumber').focus();
+    }
+
+    function exitGroupMode() {
+      groupModeActive = false;
+      groupBatch = [];
+      document.getElementById('groupModeBanner').classList.add('hidden');
+      cancelEdit();
+    }
+
+    function updateGroupModeBanner() {
+      const total = groupBatch.reduce((sum, entry) => sum + entry.amount, 0);
+      document.getElementById('groupBatchCount').textContent = groupBatch.length;
+      document.getElementById('groupBatchTotal').textContent = formatRupees(total);
+      document.getElementById('groupBatchList').innerHTML = groupBatch.length
+        ? groupBatch.map((entry, index) => `
+            <div class="flex items-center justify-between gap-2">
+              <span>${index + 1}. ${escapeHtml(entry.name)} (${escapeHtml(entry.phone)})</span>
+              <span class="flex items-center gap-2">
+                <strong>${formatRupees(entry.amount)}</strong>
+                <button type="button" onclick="removeFromGroupBatch(${index})" class="text-red-500 hover:text-red-700" title="அகற்று">✕</button>
+              </span>
+            </div>`).join('')
+        : '<p class="text-violet-400">இன்னும் யாரும் சேர்க்கப்படவில்லை.</p>';
+      recalculateTally();
+    }
+
+    function removeFromGroupBatch(index) {
+      groupBatch.splice(index, 1);
+      updateGroupModeBanner();
+    }
+
+    // Called from handleFormSubmit() instead of createUser()/updateUser() while Group Mode is active.
+    // Resolves (or creates) the contributor exactly like a normal save, then adds them + the Amount
+    // field's value to the batch and clears the form — ready for the next person straight away.
+    async function addPersonToGroupBatch(payload) {
+      const amount = Math.round(Number(document.getElementById('amount').value) || 0);
+      if (amount <= 0) {
+        showFormFeedback('தொகையை நிரப்பவும்.', false);
+        showGlobalAlert('தொகையை நிரப்பவும்.', 'error');
+        return;
+      }
+
+      const receiverId = getSelectedReceiverId();
+      const userId = document.getElementById('userId').value;
+      const isExisting = isEditMode && userId;
+
+      setSubmitLoading(true, 'சேர்க்கிறது...');
+      try {
+        let contributorId;
+        if (isExisting) {
+          contributorId = Number(userId);
+          if (groupBatch.some(entry => entry.contributorId === contributorId)) {
+            showGlobalAlert('இந்த நபர் ஏற்கனவே குழுவில் சேர்க்கப்பட்டுள்ளார்.', 'error');
+            return;
+          }
+        } else {
+          const serialNumberValue = Number(document.getElementById('serialNumber').value);
+          const response = await authFetch(`${BASE_URL}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null }),
+          });
+          if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            throw new Error(errJson.detail || `Server returned ${response.status}`);
+          }
+          const created = await response.json();
+          contributorId = created.id;
+        }
+
+        if (contributorId === receiverId) {
+          showGlobalAlert('கொடுப்பவரும் பெறுபவரும் ஒரே குடும்பமாக இருக்க முடியாது.', 'error');
+          return;
+        }
+
+        groupBatch.push({
+          contributorId,
+          name: payload.husband_name,
+          phone: payload.phone_number,
+          amount,
+          serialNumber: document.getElementById('serialNumber').value || '—',
+        });
+        updateGroupModeBanner();
+        showGlobalAlert(`"${payload.husband_name}" குழுவில் சேர்க்கப்பட்டது (${formatRupees(amount)}). அடுத்த நபரை நிரப்பவும்.`, 'success');
+        cancelEdit();
+        document.getElementById('phoneNumber').focus();
+      } catch (error) {
+        showGlobalAlert(`சேர்க்க முடியவில்லை: ${error.message}`, 'error');
+      } finally {
+        setSubmitLoading(false);
+      }
+    }
+
+    async function confirmGroupBatch() {
+      if (groupBatch.length === 0) {
+        showGlobalAlert('குறைந்தது ஒரு நபரையாவது குழுவில் சேர்க்கவும் (Ctrl+S).', 'error');
+        return;
+      }
+      const eventId = document.getElementById('eventSelect').value;
+      if (!eventId) {
+        showGlobalAlert('நிகழ்வைத் தேர்ந்தெடுக்கவும்.', 'error');
+        return;
+      }
+      const receiverId = getSelectedReceiverId();
+      if (!receiverId) {
+        showGlobalAlert('பெறுநரைத் தேர்ந்தெடுக்கவும்.', 'error');
+        return;
+      }
+
+      const totalAmount = groupBatch.reduce((sum, entry) => sum + entry.amount, 0);
+      const cashCounted = DENOMINATIONS.reduce((total, value) => total + (denominationCounts[value] || 0) * value, 0);
+      if (cashCounted !== totalAmount) {
+        showGlobalAlert(`சரிபார்ப்பு தோல்வி: குழு மொத்தமும் (${formatRupees(totalAmount)}) எண்ணிய ரொக்கமும் (${formatRupees(cashCounted)}) பொருந்தவில்லை.`, 'error');
+        return;
+      }
+
+      try {
+        for (let i = 0; i < groupBatch.length; i++) {
+          const entry = groupBatch[i];
+          const response = await authFetch(`${BASE_URL}/contributions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              contributor_id: entry.contributorId,
+              receiver_id: receiverId,
+              event_id: Number(eventId),
+              amount: entry.amount,
+              // Full note breakdown is attached to just the first entry; the event-level summary sums
+              // across all transactions in the event, so the aggregate total still comes out correct.
+              denominations: i === 0 ? denominationCounts : undefined,
+            }),
+          });
+          if (!response.ok) {
+            const errJson = await response.json().catch(() => ({}));
+            throw new Error(`${entry.name}: ${errJson.detail || response.status}`);
+          }
+        }
+
+        const selectedEventForReceipt = currentEventsList.find(event => String(event.event_id) === eventId);
+        const receiverForReceipt = currentUsersList.find(user => user.id === receiverId);
+        const handedOverBy = document.getElementById('groupHandedOverBy').value.trim();
+
+        recordAndPrintReceipt({
+          isGroup: true,
+          eventName: selectedEventForReceipt?.event_name || '—',
+          eventDate: selectedEventForReceipt?.event_date || '—',
+          hostName: receiverForReceipt ? `${receiverForReceipt.husband_name}${receiverForReceipt.phone_number ? ' | ' + receiverForReceipt.phone_number : ''}` : '—',
+          handedOverBy: handedOverBy || '—',
+          contributors: groupBatch.map(entry => ({ name: entry.name, phone: entry.phone, amount: formatRupees(entry.amount), serialNumber: entry.serialNumber })),
+          totalAmount: formatRupees(totalAmount),
+          receivedBy: currentStaff?.display_name || '—',
+          printedDate: new Date().toLocaleDateString('en-IN'),
+          printedTime: new Date().toLocaleTimeString('en-IN'),
+        });
+
+        showGlobalAlert(`குழு பங்களிப்பு பதிவு செய்யப்பட்டது: ${formatRupees(totalAmount)}`, 'success');
+        exitGroupMode();
+        zeroOutDenominations();
+        await loadEvents(Number(eventId));
+        refreshMyCollectionsIfOpen();
+        refreshAdminCountersIfOpen();
+        await loadUsers();
+      } catch (error) {
+        showGlobalAlert(`குழு பங்களிப்பு பதிவு செய்ய முடியவில்லை: ${error.message}`, 'error');
+      }
+    }
+
+    // Tab in the Amount field jumps straight to the denomination tally instead of going to Notes.
+    function handleAmountKeydown(event) {
+      if (event.key !== 'Tab' || event.shiftKey) return;
+      event.preventDefault();
+      const firstDenomInput = document.getElementById(`denomCount${DENOMINATIONS[0]}`);
+      if (firstDenomInput) {
+        firstDenomInput.focus();
+        firstDenomInput.select();
+      }
+    }
+
+    // Preview the serial number the next saved user will receive (display-only). Scoped to the currently
+    // selected event (count of distinct contributors to it + 1) so each event's numbering starts at 1.
+    async function loadNextSerialNumber() {
+      try {
+        const eventId = document.getElementById('eventSelect')?.value;
+        const url = eventId
+          ? `${BASE_URL}/users/next-serial-number?event_id=${eventId}`
+          : `${BASE_URL}/users/next-serial-number`;
+        const response = await authFetch(url, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!isEditMode) {
+          document.getElementById('serialNumber').value = data.next_serial_number;
+        }
+      } catch (error) {
+        // Preview is best-effort; it does not block manual entry.
+      }
+    }
+
+    // Space-separated quick entry: Native Current Husband Wife Amount (~ or - skips a field).
+    // Phone is not included here; it is typed directly in its own field above.
+    function handlePasteDetails() {
+      const pastedText = document.getElementById('pasteDetails').value.trim();
+      if (!pastedText) return;
+
+      const tokens = pastedText.split(/\s+/);
+      let amount = null;
+      if (tokens.length) {
+        const lastToken = tokens[tokens.length - 1];
+        const parsedAmount = Number(lastToken);
+        if (!Number.isNaN(parsedAmount) && lastToken !== '') {
+          amount = parsedAmount;
+          tokens.pop();
+        }
+      }
+
+      const fieldIds = ['nativePlace', 'currentPlace', 'husbandName', 'wifeName'];
+      fieldIds.forEach((fieldId, index) => {
+        const token = tokens[index];
+        if (token === undefined) return;
+        if (token === '~' || token === '-') return;
+        document.getElementById(fieldId).value = token;
+      });
+
+      if (amount !== null) {
+        document.getElementById('amount').value = amount;
+      }
+    }
+
+    /**
+     * Helper to show global alerts (success or error)
+     */
+    function showGlobalAlert(message, type = 'success') {
+      const container = document.getElementById('globalAlertContainer');
+      const box = document.getElementById('globalAlertBox');
+      const msgEl = document.getElementById('alertMessage');
+      const iconEl = document.getElementById('alertIcon');
+
+      container.classList.remove('hidden');
+      msgEl.textContent = message;
+
+      if (type === 'success') {
+        box.className = 'p-3.5 rounded-lg border text-sm flex items-start justify-between shadow-xs border-emerald-200 text-emerald-800';
+        box.style.backgroundColor = '#7ef0a6';
+        iconEl.innerHTML = `<svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+      } else {
+        box.className = 'p-3.5 rounded-lg border text-sm flex items-start justify-between shadow-xs bg-red-50 border-red-200 text-red-800';
+        box.style.backgroundColor = '';
+        iconEl.innerHTML = `<svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+      }
+
+      // Auto dismiss success alerts after 5 seconds
+      if (type === 'success') {
+        setTimeout(() => {
+          dismissGlobalAlert();
+        }, 5000);
+      }
+    }
+
+    function dismissGlobalAlert() {
+      document.getElementById('globalAlertContainer').classList.add('hidden');
+    }
+
+    /**
+     * Updates header status indicator dot and text
+     */
+    function setConnectionStatus(connected, message = '') {
+      const badge = document.getElementById('connectionStatusBadge');
+      const dot = document.getElementById('statusIndicatorDot');
+      const text = document.getElementById('statusText');
+
+      if (connected) {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        text.textContent = message || 'இணைப்பு இணைந்தது (127.0.0.1:8001)';
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200';
+        dot.className = 'w-2 h-2 rounded-full bg-red-500';
+        text.textContent = message || 'இணைப்பு இல்லை (127.0.0.1:8001 அழைக்க முடியவில்லை)';
+      }
+    }
+
+    /**
+     * Show form-level inline feedback message
+     */
+    function showFormFeedback(message, isSuccess = true) {
+      const fb = document.getElementById('formFeedback');
+      fb.classList.remove('hidden');
+      if (isSuccess) {
+        fb.className = 'text-xs p-3 rounded-lg border text-emerald-800 border-emerald-200 font-medium';
+        fb.style.backgroundColor = '#7ef0a6';
+        fb.innerHTML = `✓ ${message}`;
+      } else {
+        fb.className = 'text-xs p-3 rounded-lg border bg-red-50 text-red-800 border-red-200 font-medium';
+        fb.style.backgroundColor = '';
+        fb.innerHTML = `⚠️ ${message}`;
+      }
+    }
+
+    function clearFormFeedback() {
+      const fb = document.getElementById('formFeedback');
+      fb.classList.add('hidden');
+      fb.innerHTML = '';
+    }
+
+    // =========================================================================
+    // API FUNCTION 1: loadUsers()
+    // Endpoint: GET /users
+    // Retrieves all user records from backend
+    // =========================================================================
+    async function loadUsers() {
+      const tableLoading = document.getElementById('tableLoading');
+      const tableError = document.getElementById('tableError');
+      const tableEmpty = document.getElementById('tableEmpty');
+      const tableBody = document.getElementById('usersTableBody');
+      const userCountBadge = document.getElementById('userCountBadge');
+
+      tableLoading.classList.remove('hidden');
+      tableError.classList.add('hidden');
+      tableEmpty.classList.add('hidden');
+      tableBody.innerHTML = '';
+
+      try {
+        // [API CALL] GET /users
+        const response = await authFetch(`${BASE_URL}/users`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setConnectionStatus(true);
+
+        // Normalize response whether returned as an array or { users: [...] }
+        const users = Array.isArray(data) ? data : (data.users || []);
+        currentUsersList = users;
+        userCountBadge.textContent = users.length;
+        handleSidebarSearch();
+
+        tableLoading.classList.add('hidden');
+
+        if (users.length === 0) {
+          tableEmpty.classList.remove('hidden');
+          document.getElementById('tableEmptySub').textContent = 'தரவுத்தளத்தில் இப்போது பதிவுகள் இல்லை. இடதுபுறத்துள்ள படிவைப் பயன்படுத்தி புதிதாக சேர்க்கவும்.';
+        } else {
+          renderUserRows(users);
+        }
+
+      } catch (error) {
+        tableLoading.classList.add('hidden');
+        tableError.classList.remove('hidden');
+        setConnectionStatus(false);
+
+        const errMsg = error.message || 'பதிவுகளைப் பெற முடியவில்லை';
+        document.getElementById('tableErrorMessage').textContent = `${errMsg}. http://127.0.0.1:8001 இல் FastAPI சர்வர் இயங்குவதையும் CORS இயக்கப்பட்டுள்ளதும் உறுதிப்படுத்தவும்.`;
+        
+        // Show actual error in global alert
+        showGlobalAlert(`இணைப்பு பிழை: ${errMsg}`, 'error');
+      }
+    }
+
+    // =========================================================================
+    // API FUNCTION 2: searchUsers(query)
+    // Endpoint: GET /users?search=value
+    // Searches users by phone, name, or location
+    // =========================================================================
+    async function searchUsers(query) {
+      const tableLoading = document.getElementById('tableLoading');
+      const tableError = document.getElementById('tableError');
+      const tableEmpty = document.getElementById('tableEmpty');
+      const tableBody = document.getElementById('usersTableBody');
+      const userCountBadge = document.getElementById('userCountBadge');
+      const searchFilterTag = document.getElementById('searchFilterTag');
+      const currentSearchTerm = document.getElementById('currentSearchTerm');
+
+      tableLoading.classList.remove('hidden');
+      tableError.classList.add('hidden');
+      tableEmpty.classList.add('hidden');
+      tableBody.innerHTML = '';
+
+      searchFilterTag.classList.remove('hidden');
+      currentSearchTerm.textContent = `"${query}"`;
+
+      try {
+        // [API CALL] GET /users?search=value
+        const response = await authFetch(`${BASE_URL}/users?search=${encodeURIComponent(query)}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setConnectionStatus(true);
+
+        const users = Array.isArray(data) ? data : (data.users || []);
+        currentUsersList = users;
+        userCountBadge.textContent = users.length;
+
+        tableLoading.classList.add('hidden');
+
+        if (users.length === 0) {
+          tableEmpty.classList.remove('hidden');
+          document.getElementById('tableEmptySub').textContent = `"${query}" என்பதற்கு பதிவுகள் எதுவும் இல்லை.`;
+        } else {
+          renderUserRows(users);
+        }
+
+      } catch (error) {
+        tableLoading.classList.add('hidden');
+        tableError.classList.remove('hidden');
+        setConnectionStatus(false);
+
+        const errMsg = error.message || 'தேடல் தோல்வியடைந்தது';
+        document.getElementById('tableErrorMessage').textContent = `தேடல் பிழை: ${errMsg}`;
+        showGlobalAlert(`தேடல் பிழை: ${errMsg}`, 'error');
+      }
+    }
+
+    // Look up an exact phone match after the user pauses typing.
+    function handlePhoneInput(event) {
+      const phoneNumber = event.target.value.trim();
+      clearTimeout(phoneLookupTimer);
+
+      if (!phoneNumber) {
+        lastPhoneLookup = '';
+        return;
+      }
+
+      if (phoneNumber === lastPhoneLookup) {
+        return;
+      }
+
+      phoneLookupTimer = setTimeout(() => lookupUserByPhone(phoneNumber), 350);
+    }
+
+    async function lookupUserByPhone(phoneNumber) {
+      lastPhoneLookup = phoneNumber;
+
+      const cachedUser = currentUsersList.find(
+        user => String(user.phone_number) === phoneNumber
+      );
+      if (cachedUser) {
+        autofillExistingUser(cachedUser);
+        return;
+      }
+
+      try {
+        const response = await authFetch(
+          `${BASE_URL}/users?search=${encodeURIComponent(phoneNumber)}`,
+          { headers: { 'Accept': 'application/json' } }
+        );
+        if (!response.ok) return;
+
+        const users = await response.json();
+        const exactMatch = users.find(
+          user => String(user.phone_number) === phoneNumber
+        );
+        if (exactMatch) {
+          autofillExistingUser(exactMatch);
+        }
+      } catch (error) {
+        // A lookup failure should not prevent manual form entry.
+      }
+    }
+
+    // Name-based lookup fallback: some existing families have no phone on file (or the counter doesn't
+    // know it right now), so husband/wife name alone must also be able to find and autofill them.
+    // Only autofills on an UNAMBIGUOUS single match — multiple same-name hits just show a warning
+    // instead of risking the wrong family's data being loaded.
+    async function handleNameFieldBlur(fieldId, matchKey) {
+      // Delay hiding the suggestion dropdown so a click on a suggestion (which also fires blur
+      // first) still has time to register before it disappears.
+      setTimeout(() => {
+        const dropdown = document.getElementById(`${fieldId}Suggestions`);
+        if (dropdown) dropdown.classList.add('hidden');
+      }, 150);
+
+      if (isEditMode) return;
+      const value = document.getElementById(fieldId).value.trim();
+      if (value.length < 2) return;
+
+      const normalized = value.toLowerCase();
+      let matches = currentUsersList.filter(user => (user[matchKey] || '').trim().toLowerCase() === normalized);
+
+      if (matches.length === 0) {
+        try {
+          const response = await authFetch(`${BASE_URL}/users?search=${encodeURIComponent(value)}`, { headers: { 'Accept': 'application/json' } });
+          if (response.ok) {
+            const users = await response.json();
+            matches = users.filter(user => (user[matchKey] || '').trim().toLowerCase() === normalized);
+          }
+        } catch (error) {
+          // A lookup failure should not prevent manual form entry.
+        }
+      }
+
+      if (matches.length === 1 && !isEditMode) {
+        autofillExistingUser(matches[0]);
+        showFormFeedback(`"${value}" பெயர் மூலம் இருக்கும் பதிவு கண்டறியப்பட்டது (#${matches[0].id}).`, true);
+      } else if (matches.length > 1) {
+        showFormFeedback(`"${value}" என்ற பெயரில் ${matches.length} பதிவுகள் உள்ளன. போன் எண் அல்லது தேடு மூலம் சரியானதைக் கண்டறியவும்.`, false);
+      }
+    }
+
+    function handleHusbandNameBlur() {
+      handleNameFieldBlur('husbandName', 'husband_name');
+    }
+
+    function handleWifeNameBlur() {
+      handleNameFieldBlur('wifeName', 'wife_name');
+    }
+
+    // =========================================================================
+    // Live name typing: shows a dropdown of existing families whose name contains the current text,
+    // so a brand-new vs. already-registered family can be told apart while typing, not just on blur.
+    // =========================================================================
+    let nameSuggestionTimer = null;
+    // Tracks the currently-rendered dropdown's own matches + keyboard-highlighted row, so
+    // ArrowUp/ArrowDown/Enter can navigate it without re-querying the DOM for data.
+    let nameSuggestionMatches = [];
+    let nameSuggestionActiveIndex = -1;
+    let nameSuggestionFieldId = null;
+
+    // Tamil Unicode -> rough Latin sound, used only to let a still-being-typed Tanglish query
+    // match Tamil names already saved in the DB, before the IME finishes converting the field.
+    const TAMIL_PULLI = '\u0BCD';
+    const TAMIL_CONSONANT_SOUNDS = {
+      '\u0B95': 'k', '\u0B99': 'ng', '\u0B9A': 'ch', '\u0B9C': 'j', '\u0B9E': 'nj',
+      '\u0B9F': 't', '\u0BA3': 'n', '\u0BA4': 'th', '\u0BA8': 'n', '\u0BA9': 'n',
+      '\u0BAA': 'p', '\u0BAE': 'm', '\u0BAF': 'y', '\u0BB0': 'r', '\u0BB1': 'r',
+      '\u0BB2': 'l', '\u0BB3': 'l', '\u0BB4': 'zh', '\u0BB5': 'v', '\u0BB7': 'sh',
+      '\u0BB8': 's', '\u0BB9': 'h'
+    };
+    const TAMIL_VOWEL_SIGN_SOUNDS = {
+      '\u0BBE': 'a', '\u0BBF': 'i', '\u0BC0': 'i', '\u0BC1': 'u', '\u0BC2': 'u',
+      '\u0BC6': 'e', '\u0BC7': 'e', '\u0BC8': 'ai', '\u0BCA': 'o', '\u0BCB': 'o', '\u0BCC': 'au'
+    };
+    const TAMIL_STANDALONE_VOWEL_SOUNDS = {
+      '\u0B85': 'a', '\u0B86': 'a', '\u0B87': 'i', '\u0B88': 'i', '\u0B89': 'u', '\u0B8A': 'u',
+      '\u0B8E': 'e', '\u0B8F': 'e', '\u0B90': 'ai', '\u0B92': 'o', '\u0B93': 'o', '\u0B94': 'au'
+    };
+
+    // Decomposes Tamil consonant+vowel-sign pairs into an approximate Latin spelling.
+    function tamilToRoman(text) {
+      const chars = Array.from(text || '');
+      let result = '';
+      for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        const consonantSound = TAMIL_CONSONANT_SOUNDS[ch];
+        if (consonantSound) {
+          const next = chars[i + 1];
+          if (next === TAMIL_PULLI) {
+            result += consonantSound;
+            i++;
+          } else if (next && TAMIL_VOWEL_SIGN_SOUNDS[next]) {
+            result += consonantSound + TAMIL_VOWEL_SIGN_SOUNDS[next];
+            i++;
+          } else {
+            result += consonantSound + 'a';
+          }
+        } else {
+          result += TAMIL_STANDALONE_VOWEL_SOUNDS[ch] || ch;
+        }
+      }
+      return result;
+    }
+
+    // Collapses commonly-confused Tanglish spelling variants (ch/s/sh, th/t, zh/l, doubled letters)
+    // to the same canonical form so e.g. "selvam" and "chelvam" both match "செல்வம்".
+    function normalizePhonetic(text) {
+      return (text || '')
+        .toLowerCase()
+        .replace(/[^a-z]/g, '')
+        .replace(/sh/g, 'c')
+        .replace(/ch/g, 'c')
+        .replace(/zh/g, 'l')
+        .replace(/th/g, 't')
+        .replace(/dh/g, 'd')
+        .replace(/bh/g, 'b')
+        .replace(/kh/g, 'k')
+        .replace(/gh/g, 'g')
+        .replace(/ph/g, 'p')
+        .replace(/s/g, 'c')
+        .replace(/(.)\1+/g, '$1');
+    }
+
+    // Caches each record's romanized name so repeated keystrokes don't re-derive it every time.
+    const romanizedNameCache = new Map();
+    function getRomanizedMatchValue(user, matchKey) {
+      const raw = user[matchKey] || '';
+      const cacheKey = `${user.id}:${matchKey}:${raw}`;
+      if (romanizedNameCache.has(cacheKey)) return romanizedNameCache.get(cacheKey);
+      const value = normalizePhonetic(tamilToRoman(raw));
+      romanizedNameCache.set(cacheKey, value);
+      return value;
+    }
+
+    function handleNameTypingInput(fieldId) {
+      clearTimeout(nameSuggestionTimer);
+      nameSuggestionTimer = setTimeout(() => renderNameSuggestions(fieldId), 120);
+    }
+
+    function renderNameSuggestions(fieldId) {
+      const dropdown = document.getElementById(`${fieldId}Suggestions`);
+      const query = document.getElementById(fieldId).value.trim();
+      const matchKey = fieldId === 'husbandName' ? 'husband_name' : 'wife_name';
+
+      if (query.length < 2) {
+        dropdown.classList.add('hidden');
+        dropdown.innerHTML = '';
+        return;
+      }
+
+      // Tanglish still being typed (Latin letters) matches via the romanized name;
+      // Tamil text already committed matches via a direct substring check.
+      const hasLatinLetters = /[a-zA-Z]/.test(query);
+      const normalizedQuery = hasLatinLetters ? normalizePhonetic(query) : '';
+
+      const matches = currentUsersList
+        .filter(user => {
+          const tamilValue = user[matchKey] || '';
+          if (tamilValue.includes(query)) return true;
+          if (normalizedQuery && getRomanizedMatchValue(user, matchKey).includes(normalizedQuery)) return true;
+          return false;
+        })
+        .slice(0, 8);
+
+      nameSuggestionMatches = matches;
+      nameSuggestionFieldId = fieldId;
+      nameSuggestionActiveIndex = -1;
+
+      if (matches.length === 0) {
+        dropdown.classList.add('hidden');
+        dropdown.innerHTML = '';
+        return;
+      }
+
+      dropdown.innerHTML = matches.map((user, index) => {
+        // Always show whichever name field (husband/wife) actually matched as the bold primary
+        // text, with the other name as secondary context — avoids confusingly showing only the
+        // husband's name when the match came from typing in the wife field, or vice versa.
+        const primaryName = user[matchKey] || '';
+        const otherKey = matchKey === 'husband_name' ? 'wife_name' : 'husband_name';
+        const otherLabel = matchKey === 'husband_name' ? 'மனைவி' : 'கணவர்';
+        const otherName = user[otherKey] || '';
+        return `
+        <button type="button" data-index="${index}" onclick="selectNameSuggestion(${user.id})" class="block w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-50 last:border-0">
+          <span class="font-semibold text-slate-800">${escapeHtml(primaryName)}</span>
+          ${otherName ? `<span class="text-slate-400"> &bull; ${otherLabel}: ${escapeHtml(otherName)}</span>` : ''}
+          <span class="text-slate-400"> &bull; ${escapeHtml(user.phone_number || '')}</span>
+        </button>`;
+      }).join('');
+      dropdown.classList.remove('hidden');
+    }
+
+    // Moves the keyboard-highlighted row up/down, or confirms/dismisses the dropdown.
+    function handleNameFieldKeydown(event, fieldId) {
+      const dropdown = document.getElementById(`${fieldId}Suggestions`);
+      if (dropdown.classList.contains('hidden') || nameSuggestionFieldId !== fieldId || nameSuggestionMatches.length === 0) return;
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        nameSuggestionActiveIndex = Math.min(nameSuggestionActiveIndex + 1, nameSuggestionMatches.length - 1);
+        highlightNameSuggestion(fieldId);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        nameSuggestionActiveIndex = Math.max(nameSuggestionActiveIndex - 1, 0);
+        highlightNameSuggestion(fieldId);
+      } else if (event.key === 'Enter' && nameSuggestionActiveIndex >= 0) {
+        event.preventDefault();
+        selectNameSuggestion(nameSuggestionMatches[nameSuggestionActiveIndex].id);
+      } else if (event.key === 'Escape') {
+        dropdown.classList.add('hidden');
+      }
+    }
+
+    function highlightNameSuggestion(fieldId) {
+      const dropdown = document.getElementById(`${fieldId}Suggestions`);
+      dropdown.querySelectorAll('button').forEach((btn, index) => {
+        if (index === nameSuggestionActiveIndex) {
+          btn.classList.add('bg-slate-100');
+          btn.scrollIntoView({ block: 'nearest' });
+        } else {
+          btn.classList.remove('bg-slate-100');
+        }
+      });
+    }
+
+    function selectNameSuggestion(userId) {
+      const user = currentUsersList.find(u => u.id === userId);
+      if (!user) return;
+      autofillExistingUser(user);
+      document.getElementById('husbandNameSuggestions').classList.add('hidden');
+      document.getElementById('wifeNameSuggestions').classList.add('hidden');
+      nameSuggestionMatches = [];
+      nameSuggestionActiveIndex = -1;
+      nameSuggestionFieldId = null;
+    }
+
+    function autofillExistingUser(user) {
+      isEditMode = true;
+      document.getElementById('userId').value = user.id;
+      document.getElementById('serialNumber').value = user.serial_number ?? '';
+      document.getElementById('isThaimama').checked = Boolean(user.is_thaimama);
+      document.getElementById('phoneNumber').value = user.phone_number || user.phone || '';
+      document.getElementById('husbandName').value = user.husband_name || '';
+      document.getElementById('wifeName').value = user.wife_name || '';
+      document.getElementById('husbandJob').value = user.husband_job || '';
+      document.getElementById('nativePlace').value = user.native_place || '';
+      document.getElementById('currentPlace').value = user.current_place || '';
+      document.getElementById('wifeJob').value = user.wife_job || '';
+      document.getElementById('others').value = user.others || '';
+      document.getElementById('initial').value = user.initial || '';
+      document.getElementById('notes').value = user.notes || '';
+      document.getElementById('formTitle').textContent = `திருத்தம் #${user.id}`;
+      document.getElementById('formSubtitle').textContent = 'இருக்கும் பதிவு கண்டறியப்பட்டது. விவரங்களைப் புதுப்பித்து சேமிக்கவும்.';
+      document.getElementById('submitBtnText').textContent = 'புதுப்பிக்கவும்';
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+      document.getElementById('amount').value = '';
+      zeroOutDenominations();
+      showFormFeedback('இருக்கும் பதிவு கண்டறியப்பட்டது. விவரங்கள் ஏற்றப்பட்டன.', true);
+      setActiveContributor(user.id, user.husband_name || `#${user.id}`);
+      document.getElementById('amount').focus();
+    }
+
+    // =========================================================================
+    // API FUNCTION 3: createUser(payload)
+    // Endpoint: POST /users
+    // Request Body: { "phone_number": "...", "name": "...", "location": "..." }
+    // =========================================================================
+    async function createUser(payload) {
+      setSubmitLoading(true, 'சேமிக்கிறது...');
+      clearFormFeedback();
+
+      try {
+        // [API CALL] POST /users
+        const response = await authFetch(`${BASE_URL}/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          let errDetail = response.statusText;
+          try {
+            const errJson = await response.json();
+            errDetail = errJson.detail || JSON.stringify(errJson);
+          } catch(e) {}
+          throw new Error(`Server returned ${response.status}: ${errDetail}`);
+        }
+
+        const newUserData = await response.json();
+        setConnectionStatus(true);
+
+        // Success handling
+        const createdId = newUserData.id || newUserData.user_id || 'new';
+        showGlobalAlert(`"${payload.husband_name}" வெற்றிகரமாக சேமிக்கப்பட்டது! (வ.எண்: ${createdId})`, 'success');
+        showFormFeedback(`"${payload.husband_name}" பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது!`, true);
+
+        // Refresh user list so the new record is available, then switch into edit mode for THEM —
+        // keeps their details visible on the form (no need to search again) and focuses Amount
+        // so staff can immediately enter the denomination for this contributor.
+        await loadUsers();
+        startEditUser(createdId);
+        document.getElementById('amount').focus();
+
+      } catch (error) {
+        setConnectionStatus(false);
+        const errMsg = error.message || 'பதிவை சேமிக்க முடியவில்லை';
+        showFormFeedback(`பதிவை சேமிக்க முடியவில்லை: ${errMsg}`, false);
+        showGlobalAlert(`பதிவு சேமிப்பதில் பிழை: ${errMsg}`, 'error');
+      } finally {
+        setSubmitLoading(false);
+      }
+    }
+
+    // =========================================================================
+    // API FUNCTION 4: updateUser(id, payload)
+    // Endpoint: PUT /users/{id}
+    // Request Body: { "phone_number": "...", "name": "...", "location": "..." }
+    // =========================================================================
+    async function updateUser(id, payload) {
+      setSubmitLoading(true, 'புதுப்பிக்கிறது...');
+      clearFormFeedback();
+
+      try {
+        // [API CALL] PUT /users/{id}
+        const response = await authFetch(`${BASE_URL}/users/${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          let errDetail = response.statusText;
+          try {
+            const errJson = await response.json();
+            errDetail = errJson.detail || JSON.stringify(errJson);
+          } catch(e) {}
+          throw new Error(`Server returned ${response.status}: ${errDetail}`);
+        }
+
+        const updatedData = await response.json();
+        setConnectionStatus(true);
+
+        showGlobalAlert(`பதிவு #${id} (${payload.husband_name}) வெற்றிகரமாக புதுப்பிக்கப்பட்டது!`, 'success');
+        showFormFeedback(`பதிவு #${id} புதுப்பிக்கப்பட்டது!`, true);
+
+        // Reset edit mode back to create mode
+        cancelEdit();
+        setActiveContributor(id, payload.husband_name);
+
+        // Refresh the table to reflect updated info
+        await loadUsers();
+
+      } catch (error) {
+        setConnectionStatus(false);
+        const errMsg = error.message || 'Failed to update user';
+        showFormFeedback(`Failed to update user: ${errMsg}`, false);
+        showGlobalAlert(`Error updating user #${id}: ${errMsg}`, 'error');
+      } finally {
+        setSubmitLoading(false);
+      }
+    }
+
+    // =========================================================================
+    // UI Helpers: Rendering, Form Handling, Edit State Management
+    // =========================================================================
+
+    /**
+     * Renders array of users into table rows
+     */
+    // Sidebar: shows contributors to the currently selected event; typing filters within that SAME event's list only.
+    let sidebarSearchTimer = null;
+    let currentEventContributors = [];
+
+    function handleSidebarSearch() {
+      const query = document.getElementById('sidebarSearchInput').value.trim().toLowerCase();
+      clearTimeout(sidebarSearchTimer);
+      sidebarSearchTimer = setTimeout(() => {
+        if (!query) {
+          renderEventContributorsList(currentEventContributors);
+          return;
+        }
+        const matches = currentEventContributors.filter(user => {
+          const haystack = [user.husband_name, user.phone_number].filter(Boolean).join(' ').toLowerCase();
+          return haystack.includes(query);
+        });
+        document.getElementById('sidebarListTitle').textContent = `"${query}" \u2022 ${matches.length} \u0bae\u0bc1\u0b9f\u0bbf\u0bb5\u0bc1\u0b95\u0bb3\u0bcd`;
+        renderSidebarRecords(matches);
+      }, 200);
+    }
+
+    function renderEventContributorsList(contributors) {
+      const eventId = document.getElementById('eventSelect').value;
+      const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
+      document.getElementById('sidebarListTitle').textContent = selectedEvent ? `${selectedEvent.event_name} \u2022 \u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd` : '\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd';
+      renderSidebarRecords(contributors);
+    }
+
+    // Default sidebar view: who has already contributed to the currently selected event (not the whole DB).
+    // Typing in the search box filters WITHIN this same list only — never pulls in other families.
+    async function loadEventContributors() {
+      const eventId = document.getElementById('eventSelect').value;
+      document.getElementById('sidebarSearchInput').value = '';
+
+      if (!eventId) {
+        currentEventContributors = [];
+        document.getElementById('sidebarListTitle').textContent = 'நிகழ்வைத் தேர்ந்தெடுக்கவும் (Ctrl+E)';
+        renderSidebarRecords([]);
+        return;
+      }
+
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/contributors`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Could not load contributors');
+        currentEventContributors = await response.json();
+        renderEventContributorsList(currentEventContributors);
+      } catch (error) {
+        document.getElementById('sidebarRecordsList').innerHTML = '<p class="px-3.5 py-4 text-xs text-red-500 text-center">ஏற்ற முடியவில்லை.</p>';
+      }
+    }
+
+    function renderSidebarRecords(users) {
+      const container = document.getElementById('sidebarRecordsList');
+      if (!users.length) {
+        container.innerHTML = '<p class="px-3.5 py-4 text-xs text-slate-400 text-center">பதிவுகள் இல்லை.</p>';
+        return;
+      }
+      container.innerHTML = users.map(user => {
+        const id = user.id !== undefined ? user.id : user.user_id;
+        const amount = user.amount !== undefined ? `<p class="text-[11px] text-emerald-600 font-semibold mt-0.5">${formatRupees(Number(user.amount))}</p>` : '';
+        return `<button type="button" onclick="startEditUser('${id}')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 transition-colors">
+          <p class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(user.husband_name || '-')}</p>
+          <p class="text-[11px] text-slate-400 font-mono mt-0.5">${escapeHtml(user.phone_number || '-')}</p>
+          ${amount}
+        </button>`;
+      }).join('');
+    }
+
+    function renderUserRows(users) {
+      const tableBody = document.getElementById('usersTableBody');
+      tableBody.innerHTML = '';
+
+      users.forEach(user => {
+        // Resolve ID and fields safely across different schemas
+        const id = user.id !== undefined ? user.id : (user.user_id !== undefined ? user.user_id : '-');
+        const phone = user.phone_number || '-';
+        const name = user.husband_name || '-';
+        const location = user.current_place || '-';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-none';
+        tr.id = `user-row-${id}`;
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono text-xs text-slate-500 font-medium">#${id}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(name)}</td>
+          <td class="py-3 px-4 font-mono text-xs text-slate-700">${escapeHtml(phone)}</td>
+          <td class="py-3 px-4 text-slate-600">
+            <span class="inline-flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              ${escapeHtml(location)}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button 
+              type="button" 
+              onclick="startEditUser('${id}')" 
+              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded border border-brand-200 transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              திருத்து
+            </button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    /**
+     * Triggered when "Edit" is clicked on any table row
+     */
+    function startEditUser(userId) {
+      // Find user from memory or row
+      const user = currentUsersList.find(u => String(u.id || u.user_id) === String(userId));
+      if (!user) return;
+
+      isEditMode = true;
+
+      // Populate form fields
+      document.getElementById('userId').value = userId;
+      document.getElementById('serialNumber').value = user.serial_number ?? '';
+      document.getElementById('isThaimama').checked = Boolean(user.is_thaimama);
+      document.getElementById('phoneNumber').value = user.phone_number || user.phone || '';
+      document.getElementById('husbandName').value = user.husband_name || '';
+      document.getElementById('wifeName').value = user.wife_name || '';
+      document.getElementById('husbandJob').value = user.husband_job || '';
+      document.getElementById('nativePlace').value = user.native_place || '';
+      document.getElementById('currentPlace').value = user.current_place || '';
+      document.getElementById('wifeJob').value = user.wife_job || '';
+      document.getElementById('others').value = user.others || '';
+      document.getElementById('initial').value = user.initial || '';
+      document.getElementById('notes').value = user.notes || '';
+      document.getElementById('pasteDetails').value = '';
+      document.getElementById('amount').value = '';
+
+      // Update Form UI for Edit mode
+      document.getElementById('formTitle').textContent = `திருத்தம் #${userId}`;
+      document.getElementById('formSubtitle').textContent = `${user.husband_name} குடும்பத்தின் விவரங்களைப் புதுப்பிக்கவும்`;
+
+      document.getElementById('submitBtnText').textContent = 'புதுப்பிக்கவும்';
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+      clearFormFeedback();
+      zeroOutDenominations();
+      closeSearchModal();
+      setActiveContributor(user.id, user.husband_name || `#${user.id}`);
+
+      // Scroll to form smoothly if on mobile
+      document.getElementById('userForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      document.getElementById('husbandName').focus();
+    }
+
+    /**
+     * Cancel Edit mode and revert to User Registration mode
+     */
+    function cancelEdit() {
+      isEditMode = false;
+      clearForm();
+
+      document.getElementById('userId').value = '';
+      document.getElementById('formTitle').textContent = 'புதிய பதிவு';
+      document.getElementById('formSubtitle').textContent = 'புதிய குடும்ப விவரத்தை சேர்க்கவும்';
+
+      document.getElementById('submitBtnText').textContent = 'சேமிக்கவும்';
+      document.getElementById('cancelEditBtn').classList.add('hidden');
+      loadNextSerialNumber();
+    }
+
+    /**
+     * Resets input fields
+     */
+    function clearForm() {
+      document.getElementById('phoneNumber').value = '';
+      document.getElementById('isThaimama').checked = false;
+      document.getElementById('pasteDetails').value = '';
+      document.getElementById('amount').value = '';
+      document.getElementById('husbandName').value = '';
+      document.getElementById('wifeName').value = '';
+      document.getElementById('husbandJob').value = '';
+      document.getElementById('nativePlace').value = '';
+      document.getElementById('currentPlace').value = '';
+      document.getElementById('wifeJob').value = '';
+      document.getElementById('others').value = '';
+      document.getElementById('initial').value = '';
+      document.getElementById('notes').value = '';
+      clearFormFeedback();
+      zeroOutDenominations();
+      setActiveContributor(null, '');
+      if (!isEditMode) {
+        loadNextSerialNumber();
+      }
+    }
+
+    /**
+     * Reads the form fields into the JSON payload shape the backend expects.
+     * Returns null if the required fields (phone, husband name) are missing.
+     */
+    function buildUserPayloadFromForm() {
+      const phone_number = document.getElementById('phoneNumber').value.trim();
+      const husband_name = document.getElementById('husbandName').value.trim();
+      if (!phone_number || !husband_name) return null;
+
+      return {
+        husband_name: husband_name,
+        wife_name: document.getElementById('wifeName').value.trim() || null,
+        husband_job: document.getElementById('husbandJob').value.trim() || null,
+        phone_number: phone_number,
+        native_place: document.getElementById('nativePlace').value.trim() || null,
+        current_place: document.getElementById('currentPlace').value.trim() || null,
+        wife_job: document.getElementById('wifeJob').value.trim() || null,
+        others: document.getElementById('others').value.trim() || null,
+        initial: document.getElementById('initial').value.trim() || null,
+        notes: document.getElementById('notes').value.trim() || null,
+        is_thaimama: document.getElementById('isThaimama').checked,
+      };
+    }
+
+    /**
+     * Form submission dispatcher
+     */
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const payload = buildUserPayloadFromForm();
+      if (!payload) {
+        showFormFeedback('கட்டாய அனைத்து பகுதிகளையும் நிரப்பவும் (*)', false);
+        return;
+      }
+
+      if (groupModeActive) {
+        addPersonToGroupBatch(payload);
+        return;
+      }
+
+      const userId = document.getElementById('userId').value;
+
+      if (isEditMode && userId) {
+        updateUser(userId, payload);
+      } else {
+        const serialNumberValue = Number(document.getElementById('serialNumber').value);
+        createUser({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null });
+      }
+    }
+
+    /**
+     * Search form submission
+     */
+    function handleSearchSubmit(event) {
+      event.preventDefault();
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        resetSearch();
+      } else {
+        searchUsers(query);
+      }
+    }
+
+    /**
+     * Clear search filter and reload all users
+     */
+    function resetSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchFilterTag').classList.add('hidden');
+      loadUsers();
+    }
+
+    /**
+     * Helper to toggle submit button loading state
+     */
+    function setSubmitLoading(loading, label = 'Processing...') {
+      const submitBtn = document.getElementById('submitBtn');
+      const submitSpinner = document.getElementById('submitSpinner');
+      const submitBtnText = document.getElementById('submitBtnText');
+
+      if (loading) {
+        submitBtn.disabled = true;
+        submitSpinner.classList.remove('hidden');
+        submitBtnText.textContent = label;
+      } else {
+        submitBtn.disabled = false;
+        submitSpinner.classList.add('hidden');
+        submitBtnText.textContent = isEditMode ? 'Update User' : 'Save User';
+      }
+    }
+
+    /**
+     * XSS protection helper
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+
+  <!-- Print-only receipt: left empty here, filled in by recordAndPrintReceipt()/reprintLastReceipt() just before window.print() is called. -->
+  <div id="receiptPrintArea"></div>
+</body>
+</html>

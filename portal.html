@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>மொய் செய் - Family Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .portal-screen { display: none; }
+    .portal-screen.active { display: block; }
+  </style>
+</head>
+<body class="bg-slate-200 min-h-screen sm:py-6">
+
+  <!-- Mobile frame: full-bleed on phones, centered phone-width card on desktop -->
+  <div class="w-full sm:max-w-[430px] mx-auto bg-slate-50 sm:rounded-[2rem] sm:shadow-2xl overflow-hidden min-h-screen sm:min-h-[850px] relative">
+
+    <!-- ============================= SPLASH SCREEN ============================= -->
+    <section id="screen-splash" class="portal-screen active min-h-screen sm:min-h-[850px] bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white flex flex-col px-6 pt-6 pb-8">
+      <div class="flex items-center justify-between">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs font-medium">
+          <svg class="w-3.5 h-3.5 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2l1.5 4.5L16 8l-4.5 1.5L10 14l-1.5-4.5L4 8l4.5-1.5z"></path></svg>
+          மங்கல மொய் கணக்கு
+        </span>
+        <span class="text-xs font-semibold tracking-wider text-blue-200">ESTD &bull; 2024</span>
+      </div>
+
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4 py-6">
+        <div class="relative">
+          <div class="w-28 h-28 rounded-3xl bg-white shadow-xl flex flex-col items-center justify-center gap-1">
+            <svg class="w-10 h-10 text-indigo-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 11c0-2.8 2.2-5 5-5s5 2.2 5 5M4 11h16M6 11v7a2 2 0 002 2h8a2 2 0 002-2v-7"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 15.5h4M9 7.5l1.2 1.2M15 7.5l-1.2 1.2"></path>
+            </svg>
+            <span class="text-[10px] font-bold text-indigo-900 leading-none">மொய் செய்</span>
+          </div>
+          <span class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-emerald-500 border-2 border-indigo-900 flex items-center justify-center">
+            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+          </span>
+        </div>
+
+        <div>
+          <h1 class="text-3xl font-extrabold">மொய் செய்</h1>
+          <p class="text-sm font-semibold tracking-[0.3em] text-blue-200 mt-1">MOI SEI</p>
+        </div>
+
+        <div class="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3">
+          <p class="font-bold text-sm">நம்பிக்கையுடன் கணக்கு வைத்தல்</p>
+          <p class="text-xs text-blue-200 mt-0.5">Trusted Traditional &amp; Digital Ledger</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 w-full">
+          <div class="rounded-lg bg-white/10 px-2 py-3 flex flex-col items-center gap-1.5 text-center">
+            <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span class="text-[11px] font-semibold leading-tight">பாதுகாப்பு<br><span class="font-normal text-blue-200">256-Bit SSL</span></span>
+          </div>
+          <div class="rounded-lg bg-white/10 px-2 py-3 flex flex-col items-center gap-1.5 text-center">
+            <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span class="text-[11px] font-semibold leading-tight">நம்பகத்தன்மை<br><span class="font-normal text-blue-200">100% Audit</span></span>
+          </div>
+          <div class="rounded-lg bg-white/10 px-2 py-3 flex flex-col items-center gap-1.5 text-center">
+            <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="text-[11px] font-semibold leading-tight">டிஜிட்டல் ரசீது<br><span class="font-normal text-blue-200">Instant SMS</span></span>
+          </div>
+        </div>
+
+        <button type="button" id="getStartedBtn" onclick="showScreen('screen-login')" class="w-full bg-white text-indigo-900 font-bold rounded-xl py-3.5 flex items-center justify-between px-5 shadow-lg mt-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14"></path></svg>
+          <span>தொடங்கு / Get Started</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+        </button>
+      </div>
+
+      <div class="text-center text-[11px] text-blue-200 space-y-1.5">
+        <p class="flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          100% பாதுகாப்பானது &amp; மறைகுறியாக்கப்பட்டது
+        </p>
+        <p>Bank-grade 256-bit encrypted mutual-aid ledger</p>
+        <p class="flex items-center justify-center gap-1.5 text-blue-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          மங்கல சேவை தயாராக உள்ளது &bull; Ready to record
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================= LOGIN SCREEN ============================= -->
+    <section id="screen-login" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50">
+      <div class="bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white px-5 pt-6 pb-7 relative overflow-hidden">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-indigo-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 11c0-2.8 2.2-5 5-5s5 2.2 5 5M4 11h16M6 11v7a2 2 0 002 2h8a2 2 0 002-2v-7"></path>
+            </svg>
+          </div>
+          <div>
+            <p class="flex items-center gap-1.5 text-[11px] text-emerald-300 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              நம்பிக்கையான மொய் பதிவேடு
+            </p>
+            <h1 class="text-xl font-extrabold leading-tight">வரவேற்கிறோம்</h1>
+            <p class="text-xs text-blue-200">Welcome Back to Moi Sei</p>
+          </div>
+        </div>
+        <div class="border-t border-white/15 mt-4 pt-3 flex items-center justify-between">
+          <p class="flex items-center gap-1.5 text-[11px] text-blue-100">
+            <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            பாரம்பரியம் &amp; நவீன பாதுகாப்பு
+          </p>
+          <span class="text-[10px] font-bold bg-white/15 px-2 py-1 rounded-md">TAMIL NADU #1</span>
+        </div>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="px-5 -mt-3 relative z-10">
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-5 space-y-4">
+
+          <div id="loginFeedback" class="hidden text-xs p-3 rounded-lg border font-medium"></div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="loginPhone" class="text-xs font-semibold text-slate-700">கைபேசி எண் / Mobile Number</label>
+              <span class="text-[11px] text-slate-300 font-medium">OTP (விரைவில்)</span>
+            </div>
+            <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+              <span class="pl-3 pr-2 py-3 text-sm font-semibold text-slate-500 border-r border-slate-200 bg-slate-50">+91</span>
+              <input type="tel" id="loginPhone" inputmode="numeric" maxlength="10" placeholder="98421 70890" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none" oninput="validatePhoneField()">
+              <svg id="loginPhoneCheck" class="hidden w-4 h-4 mr-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="loginPassword" class="text-xs font-semibold text-slate-700">கடவுச்சொல் / Password</label>
+              <span class="text-[11px] text-slate-400">குறைந்தது 6 எழுத்துக்கள்</span>
+            </div>
+            <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+              <svg class="w-4 h-4 ml-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-2a6 6 0 10-10.472 4H4v3h3v2h3v-2h1.528A6 6 0 0018 9z"></path></svg>
+              <input type="password" id="loginPassword" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none">
+              <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" class="pr-3 pl-2 text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs">
+            <label class="flex items-center gap-2 font-medium text-slate-600 cursor-pointer">
+              <button type="button" id="rememberToggle" onclick="toggleRemember()" class="w-9 h-5 rounded-full bg-blue-600 relative transition-colors">
+                <span id="rememberDot" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform"></span>
+              </button>
+              நினைவில் கொள்க / Remember me
+            </label>
+            <span class="text-slate-300 font-medium" title="விரைவில் வரும்">கடவுச்சொல் மறந்ததா?</span>
+          </div>
+
+          <button type="submit" id="loginSubmitBtn" class="w-full bg-gradient-to-r from-blue-700 to-indigo-900 text-white font-bold rounded-xl py-3.5 flex items-center justify-between px-5 shadow-md disabled:opacity-60">
+            <span class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14"></path></svg>
+            </span>
+            <span id="loginSubmitLabel">உள்நுழைக / Sign In to Family Ledger</span>
+            <span class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+            </span>
+          </button>
+        </div>
+      </form>
+
+      <div class="px-5 mt-4 space-y-4 pb-8">
+        <div class="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 flex items-center justify-between gap-3 opacity-70">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1.9-2 2-2s2 .9 2 2M9 9a2 2 0 114 0M5 9a7 7 0 1114 0c0 4-2 6-2 9H7c0-3-2-5-2-9z"></path></svg>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">விரல்ரேகை உள்நுழைவு</p>
+              <p class="text-[11px] text-slate-500">Enable Biometric Touch ID for fast entry</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold bg-white px-2.5 py-1 rounded-full text-slate-500">விரைவில்</span>
+        </div>
+
+        <div class="rounded-xl bg-white border border-slate-200 px-4 py-3 text-xs text-slate-600">
+          <span class="font-semibold text-slate-800">குடும்பப் பதிவு இல்லையா?</span><br>
+          புதிய குடும்பங்களை நிர்வாகக் குழு மட்டுமே சேர்க்க முடியும். தயவுசெய்து மொய் சேகரிப்பு மேசையை தொடர்பு கொள்ளவும்.
+          <span class="block text-slate-400 mt-0.5">New families are only added by the collection desk — please contact them to get registered.</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="rounded-xl bg-white border border-slate-200 px-3 py-3 flex items-center gap-2.5">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a4 4 0 00-8 0v2M5 9h14l1 11H4L5 9z"></path></svg>
+            <div>
+              <p class="text-[11px] font-bold text-slate-800 leading-tight">திருமணம் &amp; ...</p>
+              <p class="text-[10px] text-slate-400 leading-tight">Instant GPay / Cash</p>
+            </div>
+          </div>
+          <div class="rounded-xl bg-white border border-slate-200 px-3 py-3 flex items-center gap-2.5">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13M12 6.253C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s4.332.477 5.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <div>
+              <p class="text-[11px] font-bold text-slate-800 leading-tight">ஆயுள் கால ஏடு</p>
+              <p class="text-[10px] text-slate-400 leading-tight">100% Exportable</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="flex items-start gap-2 text-[11px] text-slate-500 text-center justify-center">
+          <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          உங்கள் குடும்ப மொய் தரவு 100% பாதுகாப்பானது, தனிப்பட்டது மற்றும் அங்கீகரிக்கப்பட்ட உறவினர்களுக்கு மட்டும் ஒத்திசைக்கப்பட்டது.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================= PASSWORD SETUP SCREEN ============================= -->
+    <section id="screen-password-setup" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50 pb-8">
+      <div class="bg-white border-b border-slate-100 px-5 pt-5 pb-4">
+        <div class="flex items-center justify-between">
+          <button type="button" onclick="showScreen('screen-login')" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-100">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <h1 class="text-base font-bold text-slate-900">கடவுச்சொல் அமைக்க</h1>
+          <div class="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+            <svg class="w-4.5 h-4.5 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center gap-3">
+          <span class="w-6 h-6 rounded-full bg-blue-700 text-white text-[11px] font-bold flex items-center justify-center shrink-0">2</span>
+          <div class="flex-1">
+            <div class="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div class="h-full w-full bg-blue-700 rounded-full"></div>
+            </div>
+          </div>
+          <span class="text-[11px] font-semibold text-slate-500 shrink-0">படி 2/2 &bull; Step 2 of 2</span>
+        </div>
+      </div>
+
+      <div class="px-5 pt-5 space-y-4">
+        <div id="passwordSetupFeedback" class="hidden text-xs p-3 rounded-lg border font-medium"></div>
+
+        <div class="rounded-2xl bg-gradient-to-br from-indigo-900 to-blue-700 text-white p-5 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          </div>
+          <div>
+            <p class="font-bold text-sm">புதிய கடவுச்சொல் உருவாக்கவும்</p>
+            <p class="text-xs text-blue-200 mt-0.5">Create Secure Password for <span id="passwordSetupFamilyName">your</span> Moi Ledger</p>
+          </div>
+        </div>
+
+        <form id="passwordSetupForm" onsubmit="handlePasswordSetupSubmit(event)" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 space-y-4">
+          <div>
+            <label for="newPassword" class="text-xs font-semibold text-slate-700 mb-1.5 block">புதிய கடவுச்சொல் / New Password</label>
+            <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+              <svg class="w-4 h-4 ml-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-2a6 6 0 10-10.472 4H4v3h3v2h3v-2h1.528A6 6 0 0018 9z"></path></svg>
+              <input type="password" id="newPassword" oninput="updatePasswordStrength()" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none min-w-0" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+              <button type="button" onclick="togglePasswordVisibility('newPassword', this)" class="pr-3 pl-2 text-slate-400 shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-semibold text-slate-700">கடவுச்சொல் வலிமை / Strength:</span>
+              <span id="strengthBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">&mdash;</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+              <div id="strengthBar1" class="h-1.5 rounded-full bg-slate-200"></div>
+              <div id="strengthBar2" class="h-1.5 rounded-full bg-slate-200"></div>
+              <div id="strengthBar3" class="h-1.5 rounded-full bg-slate-200"></div>
+              <div id="strengthBar4" class="h-1.5 rounded-full bg-slate-200"></div>
+            </div>
+            <div class="mt-2.5 space-y-1.5">
+              <p id="ruleLength" class="flex items-center gap-1.5 text-xs text-slate-400">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                குறைந்தது 8 எழுத்துக்கள் (Min. 8 chars)
+              </p>
+              <p id="ruleNumberSymbol" class="flex items-center gap-1.5 text-xs text-slate-400">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                ஒரு எண் &amp; சிறப்பு குறியீடு (Number &amp; symbol)
+              </p>
+              <p id="ruleUppercase" class="flex items-center gap-1.5 text-xs text-slate-400">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                பெரிய எழுத்து (Uppercase letter)
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="confirmPassword" class="text-xs font-semibold text-slate-700">கடவுச்சொல்லை உறுதிசெய் / Confirm Password</label>
+              <span id="confirmMatchLabel" class="text-[11px] font-semibold"></span>
+            </div>
+            <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+              <svg class="w-4 h-4 ml-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <input type="password" id="confirmPassword" oninput="updatePasswordStrength()" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none min-w-0" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+              <button type="button" onclick="togglePasswordVisibility('confirmPassword', this)" class="pr-3 pl-2 text-slate-400 shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1.9-2 2-2s2 .9 2 2M9 9a2 2 0 114 0M5 9a7 7 0 1114 0c0 4-2 6-2 9H7c0-3-2-5-2-9z"></path></svg>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-800">கைரேகை / Face ID பதிவு</p>
+                <p class="text-[11px] text-slate-500">விரைவான &amp; எளிய உள்நுழைவு (Biometric unlock)</p>
+              </div>
+            </div>
+            <button type="button" id="biometricToggle" onclick="toggleBiometric()" class="w-9 h-5 rounded-full bg-blue-600 relative transition-colors shrink-0">
+              <span id="biometricDot" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" style="transform: translateX(16px);"></span>
+            </button>
+          </div>
+
+          <div class="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 flex items-start gap-2.5">
+            <svg class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <div>
+              <p class="text-xs font-bold text-emerald-800">256-Bit வங்கி தர பாதுகாப்பு உறுதி</p>
+              <p class="text-[11px] text-emerald-700 mt-0.5">Bank-grade encryption safeguards your family event ledger.</p>
+            </div>
+          </div>
+
+          <button type="submit" id="passwordSetupSubmitBtn" class="w-full bg-gradient-to-r from-blue-700 to-indigo-900 text-white font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 shadow-md disabled:opacity-60">
+            <span id="passwordSetupSubmitLabel">கடவுச்சொல்லை சேமி / Save &amp; Continue</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+          </button>
+
+          <p class="text-center text-[11px] text-slate-400">உள்நுழைவு விவரங்களை யாருடனும் பகிர வேண்டாம் &bull; Keep credentials private</p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================= HOME SCREEN ============================= -->
+    <section id="screen-home" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50 pb-24">
+      <header class="bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white px-5 pt-6 pb-8">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5 text-indigo-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 11c0-2.8 2.2-5 5-5s5 2.2 5 5M4 11h16M6 11v7a2 2 0 002 2h8a2 2 0 002-2v-7"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[11px] text-blue-200">வணக்கம் / Welcome</p>
+              <h1 id="homeFamilyName" class="text-lg font-extrabold truncate">உங்கள் குடும்பம்</h1>
+            </div>
+          </div>
+          <button type="button" onclick="logoutFamily()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-blue-100" title="Logout">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1"></path></svg>
+          </button>
+        </div>
+        <div class="mt-6">
+          <p class="text-xs text-blue-200">உங்கள் மொய் கணக்கு / Family ledger balance</p>
+          <p id="homeNetBalance" class="text-4xl font-extrabold tracking-tight mt-1">₹0</p>
+          <p id="homeBalanceCaption" class="text-xs text-blue-200 mt-1">கணக்கு விவரங்கள் ஏற்றப்படுகின்றன...</p>
+        </div>
+      </header>
+
+      <main class="px-5 -mt-4 relative space-y-5">
+        <div id="homeFeedback" class="hidden text-xs p-3 rounded-xl border font-medium"></div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4 1.343 4 3-1.79 3-4 3m0-14v14m4-11.5A4.5 4.5 0 0012 5a4.5 4.5 0 00-4 2.5"></path></svg>
+            </div>
+            <p class="text-[11px] text-slate-500">மொத்தம் கொடுத்தது</p>
+            <p id="homeTotalGiven" class="text-lg font-extrabold text-slate-900 mt-0.5">₹0</p>
+            <p class="text-[10px] text-slate-400">Total given</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m4-12H9.5a2.5 2.5 0 000 5H14.5a2.5 2.5 0 010 5H8"></path></svg>
+            </div>
+            <p class="text-[11px] text-slate-500">மொத்தம் பெற்றது</p>
+            <p id="homeTotalReceived" class="text-lg font-extrabold text-slate-900 mt-0.5">₹0</p>
+            <p class="text-[10px] text-slate-400">Total received</p>
+          </div>
+        </div>
+
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900">குடும்ப உறவுகள்</h2>
+              <p class="text-xs text-slate-500">Partner families &amp; net difference</p>
+            </div>
+            <span id="homePartnerCount" class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">0 குடும்பங்கள்</span>
+          </div>
+          <div id="homePartnerList" class="space-y-3">
+            <div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-400">உறவுகள் ஏற்றப்படுகின்றன...</div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 pt-3 pb-4 flex items-center justify-around">
+        <button type="button" class="flex flex-col items-center gap-1 text-blue-700" aria-current="page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 11.5L12 4l9 7.5M5.5 10v9.5h13V10M9.5 19.5v-5h5v5"></path></svg>
+          <span class="text-[10px] font-bold">முகப்பு</span>
+        </button>
+        <button type="button" onclick="showScreen('screen-history')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l2.5 2.5M20 12a8 8 0 11-16 0 8 8 0 0116 0z"></path></svg>
+          <span class="text-[10px] font-semibold">வரலாறு</span>
+        </button>
+        <button type="button" onclick="showScreen('screen-profile')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"></path></svg>
+          <span class="text-[10px] font-semibold">சுயவிவரம்</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- ============================= HISTORY ============================= -->
+    <section id="screen-history" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50 pb-24">
+      <header class="bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white px-5 pt-6 pb-6">
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="showScreen('screen-home')" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <div>
+            <p class="text-[11px] text-blue-200">பரிவர்த்தனை ஏடு</p>
+            <h1 class="text-lg font-extrabold">வரலாறு / History</h1>
+          </div>
+        </div>
+      </header>
+
+      <main class="px-5 -mt-3 relative space-y-4">
+        <div id="historyFeedback" class="hidden text-xs p-3 rounded-xl border font-medium"></div>
+
+        <div class="flex gap-2 bg-slate-100 p-1 rounded-xl">
+          <button type="button" id="historyFilterAllBtn" onclick="setHistoryFilter('all')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-700 shadow-sm transition-colors">அனைத்தும்</button>
+          <button type="button" id="historyFilterGivenBtn" onclick="setHistoryFilter('given')" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-500 transition-colors">கொடுத்தது</button>
+          <button type="button" id="historyFilterReceivedBtn" onclick="setHistoryFilter('received')" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-500 transition-colors">பெற்றது</button>
+        </div>
+
+        <div id="historyList" class="space-y-3">
+          <div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-400">பரிவர்த்தனைகள் ஏற்றப்படுகின்றன...</div>
+        </div>
+      </main>
+
+      <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 pt-3 pb-4 flex items-center justify-around">
+        <button type="button" onclick="showScreen('screen-home')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 11.5L12 4l9 7.5M5.5 10v9.5h13V10M9.5 19.5v-5h5v5"></path></svg>
+          <span class="text-[10px] font-semibold">முகப்பு</span>
+        </button>
+        <button type="button" class="flex flex-col items-center gap-1 text-blue-700" aria-current="page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l2.5 2.5M20 12a8 8 0 11-16 0 8 8 0 0116 0z"></path></svg>
+          <span class="text-[10px] font-bold">வரலாறு</span>
+        </button>
+        <button type="button" onclick="showScreen('screen-profile')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"></path></svg>
+          <span class="text-[10px] font-semibold">சுயவிவரம்</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- ============================= PARTNER TIMELINE ============================= -->
+    <section id="screen-partner-timeline" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50 pb-8">
+      <header class="bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white px-5 pt-6 pb-6">
+        <div class="flex items-center gap-3">
+          <button type="button" onclick="showScreen('screen-home')" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <div class="min-w-0">
+            <p class="text-[11px] text-blue-200">குடும்ப 2 பரிவர்த்தனை ஏடு</p>
+            <h1 id="partnerTimelineName" class="text-lg font-extrabold truncate">குடும்பம்</h1>
+          </div>
+        </div>
+        <div class="mt-5 grid grid-cols-3 gap-2 text-center">
+          <div class="bg-white/10 rounded-xl py-2.5">
+            <p class="text-[10px] text-blue-200">கொடுத்தது</p>
+            <p id="partnerTimelineGiven" class="text-sm font-extrabold mt-0.5">₹0</p>
+          </div>
+          <div class="bg-white/10 rounded-xl py-2.5">
+            <p class="text-[10px] text-blue-200">பெற்றது</p>
+            <p id="partnerTimelineReceived" class="text-sm font-extrabold mt-0.5">₹0</p>
+          </div>
+          <div class="bg-white/10 rounded-xl py-2.5">
+            <p class="text-[10px] text-blue-200">விதியாசம்</p>
+            <p id="partnerTimelineNet" class="text-sm font-extrabold mt-0.5">₹0</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="px-5 pt-5 space-y-4">
+        <div id="partnerTimelineFeedback" class="hidden text-xs p-3 rounded-xl border font-medium"></div>
+        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h2 class="text-sm font-extrabold text-slate-900 mb-3">அடையாள விவரங்கள் / Identity Details</h2>
+          <div id="partnerTimelineIdentity" class="space-y-2 text-sm"></div>
+        </section>
+        <div id="partnerTimelineList" class="space-y-3">
+          <div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-400">பரிவர்த்தனைகள் ஏற்றப்படுகின்றன...</div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============================= PROFILE ============================= -->
+    <section id="screen-profile" class="portal-screen min-h-screen sm:min-h-[850px] bg-slate-50 pb-24">
+      <header class="bg-gradient-to-br from-indigo-950 via-blue-900 to-blue-700 text-white px-5 pt-6 pb-8">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <div id="profileAvatar" class="w-12 h-12 rounded-full bg-white text-indigo-900 flex items-center justify-center font-extrabold text-lg shrink-0">?</div>
+            <div class="min-w-0">
+              <p class="text-[11px] text-blue-200">சுயவிவரம் / Profile</p>
+              <h1 id="profileHusbandName" class="text-lg font-extrabold truncate">உங்கள் குடும்பம்</h1>
+            </div>
+          </div>
+          <button type="button" onclick="logoutFamily()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-blue-100" title="Logout">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h5a2 2 0 012 2v1"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="px-5 -mt-4 relative space-y-5">
+        <div id="profileFeedback" class="hidden text-xs p-3 rounded-xl border font-medium"></div>
+
+        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h2 class="text-sm font-extrabold text-slate-900 mb-3">குடும்ப விவரங்கள் / Family Details</h2>
+          <div id="profileDetailsList" class="space-y-3 text-sm">
+            <div class="text-xs text-slate-400">விவரங்கள் ஏற்றப்படுகின்றன...</div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h2 class="text-sm font-extrabold text-slate-900 mb-3">கடவுச்சொல்லை மாற்றவும் / Change Password</h2>
+          <form id="changePasswordForm" onsubmit="handleChangePasswordSubmit(event)" class="space-y-3">
+            <div>
+              <label for="currentPasswordInput" class="text-xs font-semibold text-slate-700 mb-1.5 block">தற்போதைய கடவுச்சொல் / Current Password</label>
+              <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+                <input type="password" id="currentPasswordInput" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none min-w-0" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+                <button type="button" onclick="togglePasswordVisibility('currentPasswordInput', this)" class="pr-3 pl-2 text-slate-400 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label for="newPasswordInput" class="text-xs font-semibold text-slate-700 mb-1.5 block">புதிய கடவுச்சொல் / New Password</label>
+              <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+                <input type="password" id="newPasswordInput" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none min-w-0" placeholder="குறைந்தது 6 எழுத்துக்கள்">
+                <button type="button" onclick="togglePasswordVisibility('newPasswordInput', this)" class="pr-3 pl-2 text-slate-400 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label for="confirmPasswordInput" class="text-xs font-semibold text-slate-700 mb-1.5 block">புதிய கடவுச்சொல்லை உறுதிசெய் / Confirm New Password</label>
+              <div class="flex items-center rounded-xl border border-slate-300 overflow-hidden focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+                <input type="password" id="confirmPasswordInput" class="flex-1 px-3 py-3 text-sm font-semibold focus:outline-none min-w-0" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;">
+                <button type="button" onclick="togglePasswordVisibility('confirmPasswordInput', this)" class="pr-3 pl-2 text-slate-400 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" id="changePasswordSubmitBtn" class="w-full bg-gradient-to-r from-blue-700 to-indigo-900 text-white font-bold rounded-xl py-3 text-sm disabled:opacity-60">
+              <span id="changePasswordSubmitLabel">கடவுச்சொல்லை மாற்று / Update Password</span>
+            </button>
+          </form>
+        </section>
+      </main>
+
+      <nav class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-slate-200 px-6 pt-3 pb-4 flex items-center justify-around">
+        <button type="button" onclick="showScreen('screen-home')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 11.5L12 4l9 7.5M5.5 10v9.5h13V10M9.5 19.5v-5h5v5"></path></svg>
+          <span class="text-[10px] font-semibold">முகப்பு</span>
+        </button>
+        <button type="button" onclick="showScreen('screen-history')" class="flex flex-col items-center gap-1 text-slate-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l2.5 2.5M20 12a8 8 0 11-16 0 8 8 0 0116 0z"></path></svg>
+          <span class="text-[10px] font-semibold">வரலாறு</span>
+        </button>
+        <button type="button" class="flex flex-col items-center gap-1 text-blue-700" aria-current="page">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"></path></svg>
+          <span class="text-[10px] font-bold">சுயவிவரம்</span>
+        </button>
+      </nav>
+    </section>
+
+  </div>
+
+  <script>
+    const BASE_URL = window.API_BASE_URL || 'http://127.0.0.1:8001';
+    let currentFamily = null;
+    let pendingFamilyId = null;
+    let pendingFamilyName = '';
+
+    function showScreen(id) {
+      document.querySelectorAll('.portal-screen').forEach(el => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'screen-home') {
+        loadHomeDashboard();
+      }
+      if (id === 'screen-history') {
+        loadHistory();
+      }
+      if (id === 'screen-partner-timeline') {
+        loadPartnerTimeline();
+      }
+      if (id === 'screen-profile') {
+        loadProfile();
+      }
+    }
+
+    function formatINR(value) {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(value) || 0);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+    }
+
+    function authHeaders() {
+      return currentFamily?.session_token ? { 'Authorization': `Bearer ${currentFamily.session_token}` } : {};
+    }
+
+    function showHomeFeedback(message, isSuccess) {
+      const feedback = document.getElementById('homeFeedback');
+      feedback.classList.remove('hidden');
+      feedback.className = isSuccess
+        ? 'text-xs p-3 rounded-xl border font-medium bg-emerald-50 text-emerald-800 border-emerald-200'
+        : 'text-xs p-3 rounded-xl border font-medium bg-red-50 text-red-800 border-red-200';
+      feedback.textContent = message;
+    }
+
+    async function loadHomeDashboard() {
+      if (!currentFamily?.family_id) return;
+      const familyId = currentFamily.family_id;
+      document.getElementById('homeFamilyName').textContent = currentFamily.husband_name || 'உங்கள் குடும்பம்';
+
+      try {
+        const [summaryResponse, partnersResponse, profileResponse] = await Promise.all([
+          fetch(`${BASE_URL}/family/${familyId}/summary`, { headers: authHeaders() }),
+          fetch(`${BASE_URL}/family/${familyId}/partner-history`, { headers: authHeaders() }),
+          fetch(`${BASE_URL}/family/${familyId}/profile`, { headers: authHeaders() }),
+        ]);
+        const summary = await summaryResponse.json().catch(() => ({}));
+        const partners = await partnersResponse.json().catch(() => []);
+        const profile = await profileResponse.json().catch(() => ({}));
+        if (!summaryResponse.ok || !partnersResponse.ok || !profileResponse.ok) {
+          throw new Error(summary.detail || partners.detail || profile.detail || 'Dashboard data could not be loaded.');
+        }
+
+        currentFamily = { ...currentFamily, ...profile };
+        document.getElementById('homeFamilyName').textContent = currentFamily.husband_name || 'உங்கள் குடும்பம்';
+        document.getElementById('homeNetBalance').textContent = formatINR(summary.net_balance);
+        document.getElementById('homeTotalGiven').textContent = formatINR(summary.total_given);
+        document.getElementById('homeTotalReceived').textContent = formatINR(summary.total_received);
+        document.getElementById('homeBalanceCaption').textContent = summary.net_balance >= 0
+          ? 'உங்கள் கொடுப்புகள் பெற்றதை விட அதிகம் / Net given'
+          : 'உங்கள் பெறுதல்கள் கொடுப்பை விட அதிகம் / Net received';
+        renderPartnerHistory(partners);
+      } catch (error) {
+        showHomeFeedback(`கணக்கு விவரங்களை ஏற்ற முடியவில்லை: ${error.message}`, false);
+        document.getElementById('homePartnerList').innerHTML = '<div class="bg-white rounded-2xl border border-red-100 p-5 text-center text-xs text-red-600">தரவை மீண்டும் ஏற்ற முயற்சிக்கவும்.</div>';
+      }
+    }
+
+    let currentPartners = [];
+
+    function renderPartnerHistory(partners) {
+      currentPartners = partners;
+      const list = document.getElementById('homePartnerList');
+      document.getElementById('homePartnerCount').textContent = `${partners.length} குடும்பங்கள்`;
+      if (!partners.length) {
+        list.innerHTML = '<div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-500">இன்னும் குடும்ப பரிவர்த்தனைகள் இல்லை.</div>';
+        return;
+      }
+      list.innerHTML = partners.map(partner => {
+        const difference = Number(partner.net_difference) || 0;
+        const positive = difference >= 0;
+        return `<article onclick="openPartnerTimeline(${partner.other_user_id})" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3 cursor-pointer active:bg-slate-50 transition-colors">
+          <div class="w-10 h-10 rounded-full ${positive ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'} flex items-center justify-center font-extrabold text-sm shrink-0">${escapeHtml((partner.husband_name || '?').charAt(0).toUpperCase())}</div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-bold text-slate-800 truncate">${escapeHtml(partner.husband_name || 'குடும்பம்')}</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">கொடுத்தது ${formatINR(partner.total_given)} &bull; பெற்றது ${formatINR(partner.total_received)}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-[10px] text-slate-400">வித்தியாசம்</p>
+            <p class="text-sm font-extrabold ${positive ? 'text-emerald-600' : 'text-amber-600'}">${positive ? '+' : '-'}${formatINR(Math.abs(difference))}</p>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    // ============================= HISTORY =============================
+    let historyTransactions = [];
+    let historyFilter = 'all';
+
+    function formatTxDate(value) {
+      try {
+        return new Date(value).toLocaleDateString('ta-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      } catch (error) {
+        return String(value ?? '');
+      }
+    }
+
+    function showHistoryFeedback(message, isSuccess) {
+      const feedback = document.getElementById('historyFeedback');
+      feedback.classList.remove('hidden');
+      feedback.className = isSuccess
+        ? 'text-xs p-3 rounded-xl border font-medium bg-emerald-50 text-emerald-800 border-emerald-200'
+        : 'text-xs p-3 rounded-xl border font-medium bg-red-50 text-red-800 border-red-200';
+      feedback.textContent = message;
+    }
+
+    async function loadHistory() {
+      if (!currentFamily?.family_id) return;
+      const familyId = currentFamily.family_id;
+      document.getElementById('historyList').innerHTML = '<div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-400">பரிவர்த்தனைகள் ஏற்றப்படுகின்றன...</div>';
+
+      try {
+        const [contributionsResponse, receiptsResponse] = await Promise.all([
+          fetch(`${BASE_URL}/family/${familyId}/contributions`, { headers: authHeaders() }),
+          fetch(`${BASE_URL}/family/${familyId}/receipts`, { headers: authHeaders() }),
+        ]);
+        const contributions = await contributionsResponse.json().catch(() => []);
+        const receipts = await receiptsResponse.json().catch(() => []);
+        if (!contributionsResponse.ok || !receiptsResponse.ok) {
+          throw new Error(contributions.detail || receipts.detail || 'History data could not be loaded.');
+        }
+
+        const given = contributions.map(row => ({
+          direction: 'given',
+          amount: row.amount,
+          event_name: row.event_name,
+          transaction_date: row.transaction_date,
+          transaction_id: row.transaction_id,
+          counterpart_name: row.receiver_husband_name,
+        }));
+        const received = receipts.map(row => ({
+          direction: 'received',
+          amount: row.amount,
+          event_name: row.event_name,
+          transaction_date: row.transaction_date,
+          transaction_id: row.transaction_id,
+          counterpart_name: row.contributor_husband_name,
+        }));
+
+        historyTransactions = [...given, ...received].sort((a, b) => {
+          const dateDiff = new Date(b.transaction_date) - new Date(a.transaction_date);
+          return dateDiff !== 0 ? dateDiff : b.transaction_id - a.transaction_id;
+        });
+        renderHistoryList();
+      } catch (error) {
+        showHistoryFeedback(`வரலாற்றை ஏற்ற முடியவில்லை: ${error.message}`, false);
+        document.getElementById('historyList').innerHTML = '<div class="bg-white rounded-2xl border border-red-100 p-5 text-center text-xs text-red-600">தரவை மீண்டும் ஏற்ற முயற்சிக்கவும்.</div>';
+      }
+    }
+
+    function setHistoryFilter(filter) {
+      historyFilter = filter;
+      const tabs = { all: 'historyFilterAllBtn', given: 'historyFilterGivenBtn', received: 'historyFilterReceivedBtn' };
+      Object.entries(tabs).forEach(([key, elementId]) => {
+        const button = document.getElementById(elementId);
+        button.className = key === filter
+          ? 'flex-1 py-2 rounded-lg text-xs font-bold bg-white text-blue-700 shadow-sm transition-colors'
+          : 'flex-1 py-2 rounded-lg text-xs font-bold text-slate-500 transition-colors';
+      });
+      renderHistoryList();
+    }
+
+    function renderHistoryList() {
+      const list = document.getElementById('historyList');
+      const filtered = historyFilter === 'all'
+        ? historyTransactions
+        : historyTransactions.filter(tx => tx.direction === historyFilter);
+
+      if (!filtered.length) {
+        list.innerHTML = '<div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-500">பரிவர்த்தனைகள் எதுவும் இல்லை.</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(tx => {
+        const isGiven = tx.direction === 'given';
+        return `<article class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full ${isGiven ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-700'} flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${isGiven
+              ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-6 6m6-6l6 6"></path>'
+              : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m0 0l-6-6m6 6l6-6"></path>'}</svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-bold text-slate-800 truncate">${escapeHtml(tx.counterpart_name || 'குடும்பம்')}</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5 truncate">${escapeHtml(tx.event_name || '')} &bull; ${formatTxDate(tx.transaction_date)}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-sm font-extrabold ${isGiven ? 'text-amber-600' : 'text-emerald-600'}">${isGiven ? '-' : '+'}${formatINR(tx.amount)}</p>
+            <p class="text-[10px] text-slate-400">${isGiven ? 'கொடுத்தது' : 'பெற்றது'}</p>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    // ============================= PARTNER TIMELINE =============================
+    let currentPartnerId = null;
+
+    function openPartnerTimeline(partnerId) {
+      currentPartnerId = partnerId;
+      showScreen('screen-partner-timeline');
+    }
+
+    function renderPartnerIdentity(partner) {
+      const container = document.getElementById('partnerTimelineIdentity');
+      const rows = [
+        ['மனைவி பெயர் / Wife', partner?.wife_name],
+        ['கைபேசி எண் / Phone', partner?.phone_number],
+        ['சொந்த ஊர் / Native Place', partner?.native_place],
+        ['தற்போதைய இடம் / Current Place', partner?.current_place],
+      ];
+      container.innerHTML = rows.map(([label, value]) => `
+        <div class="flex items-center justify-between gap-3 py-1.5 border-b border-slate-50 last:border-0">
+          <span class="text-xs text-slate-500">${escapeHtml(label)}</span>
+          <span class="text-sm font-semibold text-slate-800 text-right truncate">${escapeHtml(value || '—')}</span>
+        </div>
+      `).join('');
+    }
+
+    async function loadPartnerTimeline() {
+      if (!currentFamily?.family_id || !currentPartnerId) return;
+      const partner = currentPartners.find(item => item.other_user_id === currentPartnerId);
+      document.getElementById('partnerTimelineName').textContent = partner?.husband_name || 'குடும்பம்';
+      document.getElementById('partnerTimelineGiven').textContent = formatINR(partner?.total_given || 0);
+      document.getElementById('partnerTimelineReceived').textContent = formatINR(partner?.total_received || 0);
+      document.getElementById('partnerTimelineNet').textContent = formatINR(Math.abs(Number(partner?.net_difference) || 0));
+      renderPartnerIdentity(partner);
+      document.getElementById('partnerTimelineList').innerHTML = '<div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-400">பரிவர்த்தனைகள் ஏற்றப்படுகின்றன...</div>';
+
+      try {
+        const response = await fetch(`${BASE_URL}/family/${currentFamily.family_id}/partner-transactions/${currentPartnerId}`, { headers: authHeaders() });
+        const transactions = await response.json().catch(() => []);
+        if (!response.ok) {
+          throw new Error(transactions.detail || 'வரலாறு தரவை ஏற்ற முடியவில்லை.');
+        }
+        renderPartnerTimelineList(transactions.slice().reverse());
+      } catch (error) {
+        const feedback = document.getElementById('partnerTimelineFeedback');
+        feedback.classList.remove('hidden');
+        feedback.className = 'text-xs p-3 rounded-xl border font-medium bg-red-50 text-red-800 border-red-200';
+        feedback.textContent = `வரலாற்றை ஏற்ற முடியவில்லை: ${error.message}`;
+        document.getElementById('partnerTimelineList').innerHTML = '<div class="bg-white rounded-2xl border border-red-100 p-5 text-center text-xs text-red-600">தரவை மீண்டும் ஏற்ற முயற்சிக்கவும்.</div>';
+      }
+    }
+
+    function renderPartnerTimelineList(transactions) {
+      const list = document.getElementById('partnerTimelineList');
+      if (!transactions.length) {
+        list.innerHTML = '<div class="bg-white rounded-2xl border border-slate-100 p-5 text-center text-xs text-slate-500">இந்த குடும்பத்துடன் இன்னும் பரிவர்த்தனைகள் இல்லை.</div>';
+        return;
+      }
+      list.innerHTML = transactions.map(tx => {
+        const isGiven = tx.direction === 'GIVEN';
+        const runningNet = Number(tx.running_net_difference) || 0;
+        return `<article class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full ${isGiven ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-700'} flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${isGiven
+              ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-6 6m6-6l6 6"></path>'
+              : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m0 0l-6-6m6 6l6-6"></path>'}</svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-bold text-slate-800 truncate">${escapeHtml(tx.event_name || '')}</h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">${formatTxDate(tx.transaction_date)} &bull; இந்த கட்டத்தில் இருப்பு ${runningNet >= 0 ? '+' : '-'}${formatINR(Math.abs(runningNet))}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="text-sm font-extrabold ${isGiven ? 'text-amber-600' : 'text-emerald-600'}">${isGiven ? '-' : '+'}${formatINR(tx.amount)}</p>
+            <p class="text-[10px] text-slate-400">${isGiven ? 'கொடுத்தது' : 'பெற்றது'}</p>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    function logoutFamily() {
+      if (currentFamily?.session_token) {
+        fetch(`${BASE_URL}/logout`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+      }
+      currentFamily = null;
+      pendingFamilyId = null;
+      pendingFamilyName = '';
+      document.getElementById('loginPassword').value = '';
+      showScreen('screen-login');
+      showLoginFeedback('நீங்கள் பாதுகாப்பாக வெளியேறிவிட்டீர்கள்.', true);
+    }
+
+    // ============================= PROFILE =============================
+    const PROFILE_FIELD_LABELS = [
+      ['husband_name', 'கணவர் பெயர் / Husband'],
+      ['wife_name', 'மனைவி பெயர் / Wife'],
+      ['phone_number', 'கைபேசி எண் / Phone'],
+      ['native_place', 'சொந்த ஊர் / Native Place'],
+      ['current_place', 'தற்போதைய இடம் / Current Place'],
+      ['family_deity', 'குல தெய்வம் / Family Deity'],
+      ['serial_number', 'வரிசை எண் / Serial No.'],
+    ];
+
+    function showProfileFeedback(message, isSuccess) {
+      const feedback = document.getElementById('profileFeedback');
+      feedback.classList.remove('hidden');
+      feedback.className = isSuccess
+        ? 'text-xs p-3 rounded-xl border font-medium bg-emerald-50 text-emerald-800 border-emerald-200'
+        : 'text-xs p-3 rounded-xl border font-medium bg-red-50 text-red-800 border-red-200';
+      feedback.textContent = message;
+    }
+
+    async function loadProfile() {
+      if (!currentFamily?.family_id) return;
+      const familyId = currentFamily.family_id;
+
+      try {
+        const response = await fetch(`${BASE_URL}/family/${familyId}/profile`, { headers: authHeaders() });
+        const profile = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(profile.detail || 'சுயவிவரத்தை ஏற்ற முடியவில்லை.');
+        }
+        currentFamily = { ...currentFamily, ...profile };
+        document.getElementById('profileHusbandName').textContent = profile.husband_name || 'உங்கள் குடும்பம்';
+        document.getElementById('profileAvatar').textContent = (profile.husband_name || '?').charAt(0).toUpperCase();
+        renderProfileDetails(profile);
+      } catch (error) {
+        showProfileFeedback(`சுயவிவரத்தை ஏற்ற முடியவில்லை: ${error.message}`, false);
+      }
+    }
+
+    function renderProfileDetails(profile) {
+      const container = document.getElementById('profileDetailsList');
+      container.innerHTML = PROFILE_FIELD_LABELS.map(([field, label]) => `
+        <div class="flex items-center justify-between gap-3 py-2 border-b border-slate-50 last:border-0">
+          <span class="text-xs text-slate-500">${escapeHtml(label)}</span>
+          <span class="text-sm font-semibold text-slate-800 text-right truncate">${escapeHtml(profile[field] || '—')}</span>
+        </div>
+      `).join('');
+    }
+
+    async function handleChangePasswordSubmit(event) {
+      event.preventDefault();
+      const currentPassword = document.getElementById('currentPasswordInput').value;
+      const newPassword = document.getElementById('newPasswordInput').value;
+      const confirmPassword = document.getElementById('confirmPasswordInput').value;
+      const submitBtn = document.getElementById('changePasswordSubmitBtn');
+      const submitLabel = document.getElementById('changePasswordSubmitLabel');
+
+      if (!currentPassword) {
+        showProfileFeedback('தற்போதைய கடவுச்சொல்லை உள்ளிடவும்.', false);
+        return;
+      }
+      if (newPassword.length < 6) {
+        showProfileFeedback('புதிய கடவுச்சொல் குறைந்தது 6 எழுத்துக்கள் இருக்க வேண்டும்.', false);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showProfileFeedback('புதிய கடவுச்சொற்கள் பொருந்தவில்லை.', false);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitLabel.textContent = 'புதுப்பிக்கிறது...';
+
+      try {
+        const response = await fetch(`${BASE_URL}/family/${currentFamily.family_id}/password`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.detail || 'கடவுச்சொல்லை மாற்ற முடியவில்லை.');
+        }
+        document.getElementById('changePasswordForm').reset();
+        showProfileFeedback('கடவுச்சொல் வெற்றிகரமாக மாற்றப்பட்டது.', true);
+      } catch (error) {
+        showProfileFeedback(error.message, false);
+      } finally {
+        submitBtn.disabled = false;
+        submitLabel.textContent = 'கடவுச்சொல்லை மாற்று / Update Password';
+      }
+    }
+
+    function togglePasswordVisibility(inputId, button) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function validatePhoneField() {
+      const input = document.getElementById('loginPhone');
+      const check = document.getElementById('loginPhoneCheck');
+      input.value = input.value.replace(/\D/g, '').slice(0, 10);
+      check.classList.toggle('hidden', input.value.length !== 10);
+    }
+
+    let rememberEnabled = true;
+    function toggleRemember() {
+      rememberEnabled = !rememberEnabled;
+      const toggle = document.getElementById('rememberToggle');
+      const dot = document.getElementById('rememberDot');
+      toggle.className = `w-9 h-5 rounded-full relative transition-colors ${rememberEnabled ? 'bg-blue-600' : 'bg-slate-300'}`;
+      dot.style.transform = rememberEnabled ? 'translateX(16px)' : 'translateX(0)';
+    }
+
+    function showLoginFeedback(message, isSuccess) {
+      const feedback = document.getElementById('loginFeedback');
+      feedback.classList.remove('hidden');
+      feedback.className = isSuccess
+        ? 'text-xs p-3 rounded-lg border font-medium bg-emerald-50 text-emerald-800 border-emerald-200'
+        : 'text-xs p-3 rounded-lg border font-medium bg-red-50 text-red-800 border-red-200';
+      feedback.textContent = message;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const rememberedPhone = localStorage.getItem('moiSeiRememberedPhone');
+      if (rememberedPhone) {
+        document.getElementById('loginPhone').value = rememberedPhone;
+        validatePhoneField();
+      }
+    });
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      const phoneNumber = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      const submitLabel = document.getElementById('loginSubmitLabel');
+
+      if (phoneNumber.length !== 10) {
+        showLoginFeedback('சரியான 10 இலக்க கைபேசி எண்ணை உள்ளிடவும்.', false);
+        return;
+      }
+      if (!password) {
+        showLoginFeedback('கடவுச்சொல்லை உள்ளிடவும்.', false);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitLabel.textContent = 'சரிபார்க்கிறது...';
+
+      try {
+        const response = await fetch(`${BASE_URL}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ phone_number: phoneNumber, password: password }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showLoginFeedback(data.detail || 'உள்நுழைவு தோல்வியடைந்தது.', false);
+          return;
+        }
+
+        if (rememberEnabled) {
+          localStorage.setItem('moiSeiRememberedPhone', phoneNumber);
+        } else {
+          localStorage.removeItem('moiSeiRememberedPhone');
+        }
+
+        if (data.needs_password_setup) {
+          pendingFamilyId = data.family_id;
+          pendingFamilyName = data.husband_name;
+          if (document.getElementById('screen-password-setup')) {
+            openPasswordSetupScreen();
+          } else {
+            showLoginFeedback(`"${data.husband_name}" கணக்கிற்கு இன்னும் கடவுச்சொல் அமைக்கப்படவில்லை. கடவுச்சொல் அமைப்புத் திரை அடுத்த கட்டத்தில் சேர்க்கப்படும்.`, false);
+          }
+          return;
+        }
+
+        currentFamily = data;
+        if (document.getElementById('screen-home')) {
+          showScreen('screen-home');
+        } else {
+          showLoginFeedback(`உள்நுழைவு வெற்றி! "${data.husband_name}" - முகப்புத் திரை அடுத்த கட்டத்தில் சேர்க்கப்படும்.`, true);
+        }
+      } catch (error) {
+        showLoginFeedback(`இணைப்புப் பிழை: ${error.message}`, false);
+      } finally {
+        submitBtn.disabled = false;
+        submitLabel.textContent = 'உள்நுழைக / Sign In to Family Ledger';
+      }
+    }
+
+    // ============================= PASSWORD SETUP =============================
+    function openPasswordSetupScreen() {
+      document.getElementById('passwordSetupFamilyName').textContent = pendingFamilyName || 'your';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('confirmMatchLabel').textContent = '';
+      document.getElementById('passwordSetupFeedback').classList.add('hidden');
+      updatePasswordStrength();
+      showScreen('screen-password-setup');
+    }
+
+    function updatePasswordStrength() {
+      const password = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      const lengthOk = password.length >= 8;
+      const numberSymbolOk = /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password);
+      const uppercaseOk = /[A-Z]/.test(password);
+      const score = [lengthOk, numberSymbolOk, uppercaseOk].filter(Boolean).length;
+
+      setRuleState('ruleLength', lengthOk);
+      setRuleState('ruleNumberSymbol', numberSymbolOk);
+      setRuleState('ruleUppercase', uppercaseOk);
+
+      const bars = ['strengthBar1', 'strengthBar2', 'strengthBar3', 'strengthBar4'];
+      const badge = document.getElementById('strengthBadge');
+
+      if (!password) {
+        bars.forEach(id => { document.getElementById(id).className = 'h-1.5 rounded-full bg-slate-200'; });
+        badge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500';
+        badge.textContent = '\u2014';
+      } else {
+        const filled = score === 0 ? 1 : score === 1 ? 2 : score === 2 ? 3 : 4;
+        const color = score <= 1 ? 'bg-red-500' : score === 2 ? 'bg-amber-500' : 'bg-emerald-500';
+        bars.forEach((id, index) => {
+          document.getElementById(id).className = `h-1.5 rounded-full ${index < filled ? color : 'bg-slate-200'}`;
+        });
+        const badgeInfo = score <= 1
+          ? ['bg-red-100 text-red-700', 'பலவீனமானது / Weak']
+          : score === 2
+            ? ['bg-amber-100 text-amber-700', 'நடுத்தரமானது / Medium']
+            : ['bg-emerald-100 text-emerald-700', 'வலுவானது / Strong'];
+        badge.className = `text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeInfo[0]}`;
+        badge.textContent = badgeInfo[1];
+      }
+
+      const matchLabel = document.getElementById('confirmMatchLabel');
+      if (!confirmPassword) {
+        matchLabel.textContent = '';
+      } else if (confirmPassword === password) {
+        matchLabel.className = 'text-[11px] font-semibold text-emerald-600';
+        matchLabel.textContent = 'பொருந்தியது \u2713';
+      } else {
+        matchLabel.className = 'text-[11px] font-semibold text-red-600';
+        matchLabel.textContent = 'பொருந்தவில்லை';
+      }
+    }
+
+    function setRuleState(id, satisfied) {
+      const el = document.getElementById(id);
+      el.className = `flex items-center gap-1.5 text-xs ${satisfied ? 'text-emerald-600' : 'text-slate-400'}`;
+    }
+
+    let biometricEnabled = true;
+    function toggleBiometric() {
+      biometricEnabled = !biometricEnabled;
+      const toggle = document.getElementById('biometricToggle');
+      const dot = document.getElementById('biometricDot');
+      toggle.className = `w-9 h-5 rounded-full relative transition-colors shrink-0 ${biometricEnabled ? 'bg-blue-600' : 'bg-slate-300'}`;
+      dot.style.transform = biometricEnabled ? 'translateX(16px)' : 'translateX(0)';
+    }
+
+    function showPasswordSetupFeedback(message, isSuccess) {
+      const feedback = document.getElementById('passwordSetupFeedback');
+      feedback.classList.remove('hidden');
+      feedback.className = isSuccess
+        ? 'text-xs p-3 rounded-lg border font-medium bg-emerald-50 text-emerald-800 border-emerald-200'
+        : 'text-xs p-3 rounded-lg border font-medium bg-red-50 text-red-800 border-red-200';
+      feedback.textContent = message;
+    }
+
+    async function handlePasswordSetupSubmit(event) {
+      event.preventDefault();
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const submitBtn = document.getElementById('passwordSetupSubmitBtn');
+      const submitLabel = document.getElementById('passwordSetupSubmitLabel');
+
+      if (newPassword.length < 6) {
+        showPasswordSetupFeedback('கடவுச்சொல் குறைந்தது 6 எழுத்துக்கள் இருக்க வேண்டும்.', false);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showPasswordSetupFeedback('கடவுச்சொல்கள் பொருந்தவில்லை.', false);
+        return;
+      }
+      if (!pendingFamilyId) {
+        showPasswordSetupFeedback('அமர்வு பிழை: மீண்டும் உள்நுழைய முயற்சிக்கவும்.', false);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitLabel.textContent = 'சேமிக்கிறது...';
+
+      try {
+        const response = await fetch(`${BASE_URL}/family/${pendingFamilyId}/set-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ new_password: newPassword }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showPasswordSetupFeedback(data.detail || 'கடவுச்சொல் அமைக்க முடியவில்லை.', false);
+          return;
+        }
+
+        currentFamily = { family_id: pendingFamilyId, husband_name: pendingFamilyName, needs_password_setup: false, session_token: data.session_token };
+        if (document.getElementById('screen-home')) {
+          showScreen('screen-home');
+        } else {
+          showPasswordSetupFeedback(`கடவுச்சொல் அமைக்கப்பட்டது! வணக்கம், ${pendingFamilyName}. (முகப்புத் திரை அடுத்த கட்டத்தில் இணைக்கப்படும்.)`, true);
+        }
+      } catch (error) {
+        showPasswordSetupFeedback(`இணைப்புப் பிழை: ${error.message}`, false);
+      } finally {
+        submitBtn.disabled = false;
+        submitLabel.textContent = 'கடவுச்சொல்லை சேமி / Save & Continue';
+      }
+    }
+  </script>
+</body>
+</html>
