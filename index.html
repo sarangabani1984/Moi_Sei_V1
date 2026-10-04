@@ -1516,6 +1516,14 @@
           contributorPhone: document.getElementById('phoneNumber').value || '—',
           amount: formatRupees(formAmount),
           receivedBy: currentStaff?.display_name || '—',
+          dateTime: formatReceiptDateTime(new Date()),
+          event: { name: selectedEventForReceipt?.event_name, place: selectedEventForReceipt?.event_place, location: selectedEventForReceipt?.event_location },
+          host: { husband: receiverForReceipt?.husband_name, wife: receiverForReceipt?.wife_name, phone: receiverForReceipt?.phone_number },
+          place: document.getElementById('nativePlace').value.trim(),
+          husbandName: lastSavedContributorName,
+          quote: pickReceiptQuote(),
+          wifeName: document.getElementById('wifeName').value.trim(),
+          denominations: DENOMINATIONS.filter(value => denominationCounts[value] > 0).map(value => ({ value, count: denominationCounts[value] })),
           printedDate: new Date().toLocaleDateString('en-IN'),
           printedTime: new Date().toLocaleTimeString('en-IN'),
         });
@@ -1531,86 +1539,156 @@
     }
 
     // =========================================================================
-    // Receipt printing: builds a simple printable slip (event, date, host, contributor(s), amount)
-    // and opens the browser's print dialog, which also serves as a preview since there's no physical
-    // printer here to test against. The same markup is reused for the on-screen "Last Receipt" viewer.
-    // For a group, one summary page (everyone + total, for the counter's own record) is followed by
-    // one individual slip per person, so each contributing family gets their own proof of payment too.
+    // Receipt printing: builds the printable slip and opens the browser's print dialog, which also serves as a
+    // preview since there's no physical printer here to test against. The same markup is reused for the on-screen
+    // "Last Receipt" viewer. A single contribution prints one slip; Group Mode prints ONE continuous slip with a
+    // boxed block per family, then the combined note count and the event details once.
     // =========================================================================
-    function buildReceiptFrame(headerHtml, bodyHtml, footerHtml) {
+
+    // Header printed on every individual slip; change these two lines to update the company name/phones.
+    const RECEIPT_COMPANY_NAME = 'Moi Sei';
+    const RECEIPT_COMPANY_PHONES = '7411346811 / 7868946081';
+    const RECEIPT_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // Keep each quote to one short line (about 28 characters) so it never wraps on the narrow slip.
+    const RECEIPT_QUOTES = [
+      'முயற்சி திருவினை ஆக்கும்',
+      'நல்லதே நடக்கும்',
+      'மகிழ்ச்சியே வாழ்க்கை',
+      'நம்பிக்கையே வாழ்க்கையின் ஒளி',
+      'இன்றைய நாள் இனிய நாள்',
+      'உழைப்பே உயர்வு தரும்',
+      'எண்ணம் போல் வாழ்வு',
+      'பகிர்ந்து வாழ்வோம், மகிழ்வோம்',
+      'வாழ்க வளமுடன்',
+      'சிரித்து வாழ்வோம்',
+      'தோல்வி வெற்றியின் முதல் படி',
+      'கொடுப்பதில்தான் மகிழ்ச்சி',
+      'எல்லாம் நன்மைக்கே',
+      'உன்னால் முடியும்',
+      'அன்பு பெருகட்டும்',
+      'நலமுடன் வாழ்க',
+      'இன்பமே சூழ்க',
+      'ஒற்றுமையே பலம்',
+      'நேர்மறை எண்ணமே வெற்றி',
+      'ஒவ்வொரு நாளும் புதிய தொடக்கம்',
+    ];
+    let lastReceiptQuoteIndex = -1;
+
+    // Random pick that never repeats the previous one.
+    function pickReceiptQuote() {
+      let index = Math.floor(Math.random() * RECEIPT_QUOTES.length);
+      if (index === lastReceiptQuoteIndex) index = (index + 1) % RECEIPT_QUOTES.length;
+      lastReceiptQuoteIndex = index;
+      return RECEIPT_QUOTES[index];
+    }
+
+    function formatReceiptDateTime(date) {
+      const hours = date.getHours();
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${String(date.getDate()).padStart(2, '0')}.${RECEIPT_MONTHS[date.getMonth()]}.${date.getFullYear()} ${hours % 12 || 12}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`;
+    }
+
+    // One contributor's slip: header, date/typer, serial, place/husband/wife, amount, notes, event details at the bottom.
+    function renderIndividualSlip(s) {
+      const text = value => escapeHtml(String(value ?? '').trim());
+      const lineIf = (value, style = '') => String(value ?? '').trim() ? `<p style="margin:3px 0;${style}">${text(value)}</p>` : '';
+      const rule = '<hr style="border:none;border-top:1px dashed #000;margin:6px 0;">';
+      const event = s.event || {};
+      const host = s.host || {};
+      const notes = (s.denominations || []).filter(item => item.count > 0);
+      const notesHtml = notes.length ? `
+        ${rule}
+        <p style="margin:2px 0;font-size:12px;">Denomination</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          ${notes.map(item => `<tr><td style="text-align:left;">${item.value} X ${item.count}</td><td style="text-align:right;">${(item.value * item.count).toLocaleString('en-IN')}</td></tr>`).join('')}
+          <tr style="border-top:1px solid #000;"><td style="text-align:left;"><strong>Total</strong></td><td style="text-align:right;"><strong>${text(s.amount)}</strong></td></tr>
+        </table>` : '';
+
       return `
-        <div style="max-width:380px;margin:0 auto;font-family:'JetBrains Mono',monospace;font-size:13px;color:#000;">
-          <h2 style="text-align:center;font-size:18px;margin:0 0 2px;">மொய்செய்</h2>
-          <p style="text-align:center;margin:0 0 10px;font-size:11px;">நிகழ்வு பங்களிப்பு ரசீது</p>
-          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
-          ${headerHtml}
-          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
-          ${bodyHtml}
-          <hr style="border:none;border-top:1px dashed #000;margin:6px 0;">
-          ${footerHtml}
-          <p style="text-align:center;margin-top:10px;font-size:11px;">நன்றி!</p>
+        <div style="max-width:300px;margin:0 auto;font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
+          <h2 style="margin:0;font-size:22px;">${text(RECEIPT_COMPANY_NAME)}</h2>
+          <p style="margin:2px 0;font-size:13px;">${text(RECEIPT_COMPANY_PHONES)}</p>
+          ${rule}
+          <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;"><span>${text(s.dateTime)}</span><span>Typer: ${text(s.staff ?? s.receivedBy)}</span></div>
+          ${rule}
+          <p style="margin:3px 0;">Serial No : ${text(s.serialNumber)}</p>
+          ${rule}
+          ${lineIf(s.place, 'font-size:16px;')}
+          ${lineIf(s.husbandName ?? s.contributorName, 'font-size:16px;')}
+          ${lineIf(s.wifeName, 'font-size:16px;')}
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 2px;"><span>Amount</span><span style="font-size:22px;">${text(s.amount)}</span></div>
+          ${notesHtml}
+          ${rule}
+          <p style="margin:4px 0;">தங்கள் வருகைக்கு நன்றி!</p>
+          ${rule}
+          ${lineIf(host.husband)}
+          ${lineIf(host.wife)}
+          ${lineIf(event.name)}
+          ${lineIf(event.place)}
+          ${lineIf(event.location)}
+          ${lineIf(host.phone)}
+          ${rule}
+          ${lineIf(s.quote ?? pickReceiptQuote(), 'font-size:12px;white-space:nowrap;')}
         </div>`;
     }
 
-    // page-break-after separates printed pages; the dashed top border is just so the on-screen
-    // "Last Receipt" preview also shows a clear divider between consecutive slips.
-    function wrapReceiptPage(innerHtml, isFirst, isLast) {
-      const styles = [];
-      if (!isLast) styles.push('page-break-after:always;');
-      if (!isFirst) styles.push('border-top:2px dashed #ccc;margin-top:16px;padding-top:16px;');
-      return `<div style="${styles.join('')}">${innerHtml}</div>`;
+    // Group Mode slip: one continuous receipt. Header once, a boxed block per family, then the combined note
+    // count, thanks, event details and one quote.
+    function renderGroupSlip(data) {
+      const text = value => escapeHtml(String(value ?? '').trim());
+      const lineIf = (value, style = '') => String(value ?? '').trim() ? `<p style="margin:3px 0;${style}">${text(value)}</p>` : '';
+      const rule = '<hr style="border:none;border-top:1px dashed #000;margin:6px 0;">';
+      const box = 'border:1px solid #000;margin:6px 0;';
+      const event = data.event || {};
+      const host = data.host || {};
+      const handedOverBy = data.handedOverBy && data.handedOverBy !== '—' ? `கொண்டு வந்தவர்: ${data.handedOverBy}` : '';
+
+      const blocks = (data.contributors || []).map(c => `
+        <div style="${box}">
+          <div style="display:flex;border-bottom:1px solid #000;font-size:12px;">
+            <span style="flex:1;padding:2px 4px;border-right:1px solid #000;">${text(data.dateTime)}</span>
+            <span style="flex:1;padding:2px 4px;">Typer: ${text(data.receivedBy)}</span>
+          </div>
+          <p style="margin:4px 0;">Serial No : ${text(c.serialNumber)}</p>
+          ${lineIf(c.place, 'font-size:16px;')}
+          ${lineIf(c.name, 'font-size:16px;')}
+          ${lineIf(c.wife, 'font-size:16px;')}
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin:6px 6px 4px;"><span>Amount</span><span style="font-size:20px;">${text(c.amount)}</span></div>
+        </div>`).join('');
+
+      const notes = (data.denominations || []).filter(item => item.count > 0);
+      const notesHtml = notes.length ? `
+        <div style="${box}padding:2px 6px;">
+          <p style="margin:2px 0;font-size:12px;">Denomination</p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            ${notes.map(item => `<tr><td style="text-align:left;">${item.value} X ${item.count}</td><td style="text-align:right;">${(item.value * item.count).toLocaleString('en-IN')}</td></tr>`).join('')}
+            <tr style="border-top:1px solid #000;"><td style="text-align:left;"><strong>Total</strong></td><td style="text-align:right;"><strong>${text(data.totalAmount)}</strong></td></tr>
+          </table>
+        </div>` : `<p style="margin:6px 0;font-size:16px;">Total ${text(data.totalAmount)}</p>`;
+
+      return `
+        <div style="max-width:300px;margin:0 auto;font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
+          <h2 style="margin:0;font-size:22px;">${text(RECEIPT_COMPANY_NAME)}</h2>
+          <p style="margin:2px 0;font-size:13px;">${text(RECEIPT_COMPANY_PHONES)}</p>
+          ${blocks}
+          ${notesHtml}
+          ${lineIf(handedOverBy, 'font-size:12px;')}
+          <p style="margin:4px 0;">தங்கள் வருகைக்கு நன்றி!</p>
+          ${rule}
+          ${lineIf(host.husband)}
+          ${lineIf(host.wife)}
+          ${lineIf(event.name)}
+          ${lineIf(event.place)}
+          ${lineIf(event.location)}
+          ${lineIf(host.phone)}
+          ${rule}
+          ${lineIf(data.quote ?? pickReceiptQuote(), 'font-size:12px;white-space:nowrap;')}
+        </div>`;
     }
 
     function renderReceiptMarkup(data) {
-      const wrap = (label, value) => `<p style="margin:2px 0;"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value ?? '—'))}</p>`;
-      const headerHtml = `
-        ${wrap('நிகழ்வு', data.eventName)}
-        ${wrap('தேதி', data.eventDate)}
-        ${wrap('நடத்துபவர்', data.hostName)}`;
-      const footerHtml = `
-        ${wrap('பதிவு செய்தவர்', data.receivedBy)}
-        ${wrap('அச்சிடப்பட்ட தேதி', data.printedDate)}
-        ${wrap('அச்சிடப்பட்ட நேரம்', data.printedTime)}`;
-
-      if (data.isGroup) {
-        const rows = (data.contributors || []).map(c => `
-          <tr>
-            <td style="padding:3px 6px 3px 0;border-bottom:1px dashed #999;">${escapeHtml(c.name)}</td>
-            <td style="padding:3px 0;border-bottom:1px dashed #999;font-size:11px;color:#555;">${escapeHtml(c.phone)}</td>
-            <td style="padding:3px 0 3px 6px;border-bottom:1px dashed #999;text-align:right;font-weight:600;">${escapeHtml(c.amount)}</td>
-          </tr>`).join('');
-        const summaryBody = `
-          ${wrap('கொண்டு வந்தவர்', data.handedOverBy)}
-          <table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;">
-            <thead>
-              <tr style="border-bottom:1px solid #000;">
-                <th style="text-align:left;padding:3px 6px 3px 0;">பங்களிப்பாளர்</th>
-                <th style="text-align:left;padding:3px 0;">போன்</th>
-                <th style="text-align:right;padding:3px 0 3px 6px;">தொகை</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-          <p style="margin:6px 0;font-size:16px;"><strong>மொத்தம்: ₹${escapeHtml(data.totalAmount)}</strong></p>`;
-
-        const pages = [buildReceiptFrame(headerHtml, summaryBody, footerHtml)];
-        (data.contributors || []).forEach(c => {
-          const personBody = `
-            ${wrap('வரிசை எண்', c.serialNumber)}
-            ${wrap('பங்களிப்பாளர்', c.name)}
-            ${wrap('போன்', c.phone)}
-            <p style="margin:6px 0;font-size:16px;"><strong>தொகை: ₹${escapeHtml(c.amount)}</strong></p>`;
-          pages.push(buildReceiptFrame(headerHtml, personBody, footerHtml));
-        });
-        return pages.map((page, index) => wrapReceiptPage(page, index === 0, index === pages.length - 1)).join('');
-      }
-
-      const singleBody = `
-        ${wrap('வரிசை எண்', data.serialNumber)}
-        ${wrap('பங்களிப்பாளர்', data.contributorName)}
-        ${wrap('போன்', data.contributorPhone)}
-        <p style="margin:6px 0;font-size:16px;"><strong>தொகை: ₹${escapeHtml(data.amount)}</strong></p>`;
-      return buildReceiptFrame(headerHtml, singleBody, footerHtml);
+      return data.isGroup ? renderGroupSlip(data) : renderIndividualSlip(data);
     }
 
     function recordAndPrintReceipt(data) {
@@ -1764,6 +1842,8 @@
           contributorId,
           name: payload.husband_name,
           phone: payload.phone_number,
+          place: payload.native_place,
+          wife: payload.wife_name,
           amount,
           serialNumber: document.getElementById('serialNumber').value || '—',
         });
@@ -1833,8 +1913,13 @@
           eventDate: selectedEventForReceipt?.event_date || '—',
           hostName: receiverForReceipt ? `${receiverForReceipt.husband_name}${receiverForReceipt.phone_number ? ' | ' + receiverForReceipt.phone_number : ''}` : '—',
           handedOverBy: handedOverBy || '—',
-          contributors: groupBatch.map(entry => ({ name: entry.name, phone: entry.phone, amount: formatRupees(entry.amount), serialNumber: entry.serialNumber })),
+          contributors: groupBatch.map(entry => ({ name: entry.name, phone: entry.phone, place: entry.place, wife: entry.wife, amount: formatRupees(entry.amount), serialNumber: entry.serialNumber })),
           totalAmount: formatRupees(totalAmount),
+          denominations: DENOMINATIONS.filter(value => denominationCounts[value] > 0).map(value => ({ value, count: denominationCounts[value] })),
+          quote: pickReceiptQuote(),
+          dateTime: formatReceiptDateTime(new Date()),
+          event: { name: selectedEventForReceipt?.event_name, place: selectedEventForReceipt?.event_place, location: selectedEventForReceipt?.event_location },
+          host: { husband: receiverForReceipt?.husband_name, wife: receiverForReceipt?.wife_name, phone: receiverForReceipt?.phone_number },
           receivedBy: currentStaff?.display_name || '—',
           printedDate: new Date().toLocaleDateString('en-IN'),
           printedTime: new Date().toLocaleTimeString('en-IN'),
