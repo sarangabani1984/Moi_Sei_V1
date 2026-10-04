@@ -55,7 +55,7 @@
     #userForm input:not([type="checkbox"]):not([type="hidden"]):focus,
     #userForm textarea:focus,
     #denominationRows input:focus {
-      background-color: #7ef0a6;
+      background-color: #ecfdf5;
     }
     /* Printable receipt: invisible in the normal UI, shown only inside the browser's print dialog/preview. */
     #receiptPrintArea { display: none; }
@@ -66,7 +66,7 @@
     }
   </style>
 </head>
-<body class="bg-[#2d2d2d] text-slate-900 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
 
   <!-- Staff Login Overlay: full-bleed split screen (branding panel + form panel), blocks the whole Admin Panel until a counter/admin PIN is entered. -->
   <div id="staffLoginOverlay" class="fixed inset-0 z-50 flex flex-col md:flex-row">
@@ -77,7 +77,7 @@
     ></div>
 
     <!-- Right: the actual login form, full height -->
-    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#2d2d2d]">
+    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-slate-50">
       <div class="w-full max-w-sm">
         <!-- Brand mark, shown directly above the login form -->
         <div class="mb-8">
@@ -125,7 +125,7 @@
 
   <!-- 1. Header with Title & API Health/Status -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
         <div class="w-11 h-11 rounded-full bg-gradient-to-br from-brand-600 to-accent-600 text-white flex items-center justify-center shadow-md ring-2 ring-white">
           <span class="font-serif text-xl font-bold leading-none">ம</span>
@@ -190,15 +190,15 @@
   </div>
 
   <!-- Main Content Layout: Three Columns (Left Search/Recent, Middle Form, Right Tally) -->
-  <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
-    <div class="grid grid-cols-1 md:grid-cols-[repeat(16,minmax(0,1fr))] gap-6 items-start">
+  <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex-1">
+    <div class="grid grid-cols-1 xl:grid-cols-[repeat(14,minmax(0,1fr))] gap-4 items-start">
 
       <!-- LEFT SIDEBAR: Inline Search + Last 10 Recent Records (2 cols on lg) -->
-      <section class="md:col-span-2 bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden flex flex-col">
-        <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center">
+      <section class="xl:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
+        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center">
           <h2 class="text-sm font-semibold font-serif text-slate-900">தேடு / Search</h2>
         </div>
-        <div class="p-3 border-b border-slate-100">
+        <div class="p-2.5 border-b border-slate-100">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -217,15 +217,15 @@
       </section>
 
       <!-- MIDDLE COLUMN: User Registration & Edit Form (5 cols on lg) -->
-      <section class="md:col-span-5 bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-        <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center justify-center text-center">
+      <section class="xl:col-span-4 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
           <h2 class="text-sm font-semibold font-serif text-slate-900">குடும்ப விவரங்கள்</h2>
           <!-- Kept but hidden: existing edit-mode JS still updates these, just no longer shown in the header. -->
           <h2 id="formTitle" class="hidden"></h2>
           <p id="formSubtitle" class="hidden"></p>
         </div>
 
-        <form id="userForm" onsubmit="handleFormSubmit(event)" class="px-5 pb-5 pt-0 space-y-4">
+        <form id="userForm" onsubmit="handleFormSubmit(event)" class="px-4 pb-4 pt-0 space-y-3">
           <!-- Hidden input to store User ID during Edit mode -->
           <input type="hidden" id="userId" value="">
 
@@ -233,11 +233,11 @@
           <div id="formFeedback" class="hidden text-xs p-3 rounded-lg border"></div>
 
           <!-- Row 1: Serial Number | Thaimama -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="serialNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">வரிசை எண்</label>
               <input type="text" id="serialNumber" disabled
-                class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-500 cursor-not-allowed">
+                class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed">
             </div>
             <div class="flex flex-col">
               <label for="isThaimama" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">தாய்மாமன்</label>
@@ -249,7 +249,7 @@
           </div>
 
           <!-- Row 2: Phone | Paste details (frontend-only, auto-parses into the fields below) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="phoneNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 போன் <span class="text-red-500">*</span>
@@ -260,31 +260,31 @@
                 name="phone_number" 
                 placeholder="எ.கா. 9876543210" 
                 required
-                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors"
+                class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors"
               >
             </div>
             <div>
               <label for="pasteDetails" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">முழு விவரம்</label>
               <textarea id="pasteDetails" rows="1"
                 placeholder="சொந்தஊர் கணவர் மனைவி தொழில் தொகை"
-                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
+                class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
             </div>
           </div>
 
           <!-- Row 3: Native Place | Current Place -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="nativePlace" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">சொந்த ஊர்</label>
-              <input type="text" id="nativePlace" name="native_place" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <input type="text" id="nativePlace" name="native_place" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
             <div>
               <label for="currentPlace" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">இருப்பு</label>
-              <input type="text" id="currentPlace" name="current_place" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <input type="text" id="currentPlace" name="current_place" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
           </div>
 
           <!-- Row 4: Husband | Husband Job -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="relative">
               <label for="husbandName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 கணவர் <span class="text-red-500">*</span>
@@ -298,13 +298,13 @@
                 autocomplete="off"
                 oninput="handleNameTypingInput('husbandName')"
                 onkeydown="handleNameFieldKeydown(event, 'husbandName')"
-                class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors shadow-xs"
+                class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors shadow-xs"
               >
               <div id="husbandNameSuggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto text-xs"></div>
             </div>
             <div>
               <label for="husbandJob" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">கணவர் தொழில்</label>
-              <input type="text" id="husbandJob" name="husband_job" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <input type="text" id="husbandJob" name="husband_job" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
           </div>
 
@@ -312,12 +312,12 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="relative">
               <label for="wifeName" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">மனைவி</label>
-              <input type="text" id="wifeName" name="wife_name" autocomplete="off" oninput="handleNameTypingInput('wifeName')" onkeydown="handleNameFieldKeydown(event, 'wifeName')" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <input type="text" id="wifeName" name="wife_name" autocomplete="off" oninput="handleNameTypingInput('wifeName')" onkeydown="handleNameFieldKeydown(event, 'wifeName')" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
               <div id="wifeNameSuggestions" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto text-xs"></div>
             </div>
             <div>
               <label for="wifeJob" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">மனைவி தொழில்</label>
-              <input type="text" id="wifeJob" name="wife_job" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              <input type="text" id="wifeJob" name="wife_job" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             </div>
           </div>
 
@@ -325,13 +325,13 @@
           <div>
             <label for="amount" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">தொகை</label>
             <input type="number" id="amount" step="1" min="0" placeholder="0"
-              class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+              class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
             <p class="text-[11px] text-slate-400 mt-1">இந்தத் தொகை சேமிக்கப்படாது &bull; காட்சிக்கு மட்டும்</p>
           </div>
 
           <div>
             <label for="notes" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">குறிப்பு</label>
-            <textarea id="notes" name="notes" rows="1" class="block w-full rounded-md border border-slate-300 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
+            <textarea id="notes" name="notes" rows="1" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
           </div>
 
           <!-- Others/Initial are still saved but no longer shown in the UI -->
@@ -339,7 +339,7 @@
           <input type="hidden" id="initial" name="initial">
 
           <!-- Form Actions: sticky to the viewport bottom so Save is always reachable without scrolling -->
-          <div class="sticky bottom-0 z-10 -mx-5 px-5 pt-2 pb-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2.5">
+          <div class="sticky bottom-0 z-10 -mx-4 px-4 pt-2 pb-2 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
             <!-- Submit (Save / Update) Button -->
             <button 
               type="submit" 
@@ -373,11 +373,11 @@
       </section>
 
       <!-- RIGHT COLUMN: Cash Denomination Tally + Live Match Comparator (5 cols on lg) -->
-      <section class="md:col-span-5 space-y-4">
+      <section class="xl:col-span-4 space-y-3">
 
         <!-- Cash Denomination Tally Card -->
-        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-          <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center justify-center text-center">
+        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
             <h3 class="text-sm font-semibold font-serif text-slate-900">ரொக்க நோட்டுகள் சரிபார்ப்பு</h3>
           </div>
 
@@ -385,18 +385,18 @@
         </div>
 
         <!-- Live Match Comparator Card -->
-        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
 
-          <div class="p-3 grid grid-cols-3 gap-2.5">
-            <div class="rounded-lg border border-slate-200 p-2.5">
+          <div class="p-2.5 grid grid-cols-3 gap-2">
+            <div class="rounded-md border border-slate-200 p-2">
               <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">படிவத் தொகை<br>(Form Amount)</div>
               <div id="formAmountDisplay" class="text-lg font-bold text-slate-900">₹0</div>
             </div>
-            <div id="varianceBox" class="rounded-lg border p-2.5 border-emerald-300 bg-[#7ef0a6]">
+            <div id="varianceBox" class="rounded-md border p-2 border-emerald-200 bg-emerald-50">
               <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">வித்தியாசம்<br>(Variance)</div>
               <div id="varianceDisplay" class="text-lg font-bold text-emerald-900">₹0</div>
             </div>
-            <div class="rounded-lg border border-slate-200 p-2.5">
+            <div class="rounded-md border border-slate-200 p-2">
               <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">எண்ணிய ரொக்கம்<br>(Cash Counted)</div>
               <div id="cashCountedDisplay" class="text-lg font-bold text-slate-900">₹0</div>
             </div>
@@ -1336,14 +1336,14 @@
     function renderDenominationRows() {
       const container = document.getElementById('denominationRows');
       container.innerHTML = DENOMINATIONS.map(value => `
-        <div class="flex items-center justify-between px-5 py-3 gap-3 flex-wrap">
-          <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold w-20 ${DENOMINATION_COLORS[value]}">\u20b9 ${value}</span>
-          <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between px-4 py-2 gap-2 flex-wrap">
+          <span class="inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold w-16 ${DENOMINATION_COLORS[value]}">\u20b9 ${value}</span>
+          <div class="flex items-center gap-1.5">
             <button type="button" tabindex="-1" onclick="adjustDenomination(${value}, -1)" class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">-</button>
-            <input type="number" min="0" id="denomCount${value}" value="0" oninput="handleDenominationInput(${value}, this.value)" class="w-16 text-center rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold">
+            <input type="number" min="0" id="denomCount${value}" value="0" oninput="handleDenominationInput(${value}, this.value)" class="w-14 text-center rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold">
             <button type="button" tabindex="-1" onclick="adjustDenomination(${value}, 1)" class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">+</button>
           </div>
-          <div class="text-sm font-bold text-slate-900 w-24 text-right" id="denomSubtotal${value}">\u20b90</div>
+          <div class="text-sm font-bold text-slate-900 w-20 text-right" id="denomSubtotal${value}">\u20b90</div>
         </div>
       `).join('');
     }
@@ -1407,7 +1407,7 @@
       const varianceDisplay = document.getElementById('varianceDisplay');
 
       if (variance === 0) {
-        varianceBox.className = 'rounded-lg border p-2.5 border-emerald-300 bg-[#7ef0a6]';
+        varianceBox.className = 'rounded-md border p-2 border-emerald-200 bg-emerald-50';
         varianceDisplay.className = 'text-lg font-bold text-emerald-900';
         varianceDisplay.textContent = formatRupees(0);
       } else {
