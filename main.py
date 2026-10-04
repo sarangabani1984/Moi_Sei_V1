@@ -1,10 +1,12 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 import os
 import secrets
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from whatsapp import send_contribution_message
 
 # Local runs default to SQL Server (database.py); set DB_BACKEND=postgres to use Supabase (database_pg.py).
 if os.getenv("DB_BACKEND", "sqlserver") == "postgres":
@@ -223,7 +225,7 @@ def create_event_endpoint(request: CreateEventRequest, _: dict = Depends(require
 
 
 @app.post("/contributions")
-def create_contribution_endpoint(request: ContributionRequest, staff: dict = Depends(require_staff_session)) -> dict:
+def create_contribution_endpoint(request: ContributionRequest, background_tasks: BackgroundTasks, staff: dict = Depends(require_staff_session)) -> dict:
     """Record a double-entry contribution (CONTRIBUTED + RECEIVED journal entries) via sp_ProcessContribution.
     Tags the contribution with the logged-in staff member so counters can later see only their own collections."""
     success, message = process_contribution(
@@ -236,7 +238,36 @@ def create_contribution_endpoint(request: ContributionRequest, staff: dict = Dep
     )
     if not success:
         raise HTTPException(status_code=400, detail=message)
+    background_tasks.add_task(
+        _send_receipt_message, request.contributor_id, request.receiver_id, request.event_id, request.amount, staff["display_name"]
+    )
     return {"success": True, "message": message}
+
+
+def _send_receipt_message(contributor_id: int, receiver_id: int, event_id: int, amount: float, staff_name: str) -> None:
+    """Runs after the response is sent; a WhatsApp problem must never affect the saved contribution."""
+    try:
+        family = get_family_profile(contributor_id)
+        host = get_family_profile(receiver_id)
+        event = next((item for item in get_active_events() if item["event_id"] == event_id), None)
+        if not (family and event):
+            return
+        now_ist = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+        send_contribution_message(
+            family["phone_number"],
+            {
+                "name": family["husband_name"],
+                "event": event["event_name"],
+                "event_date": event["event_date"].strftime("%d-%m-%Y"),
+                "host": host["husband_name"] if host else None,
+                "serial": family.get("serial_number"),
+                "amount": amount,
+                "staff": staff_name,
+                "time": now_ist.strftime("%d-%m-%Y %H:%M"),
+            },
+        )
+    except Exception as error:
+        print(f"WhatsApp receipt failed: {error}")
 
 
 @app.get("/events/{event_id}/denomination-summary")
