@@ -7,42 +7,43 @@
   <!-- Tailwind CSS CDN for clean, responsive admin styling -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="config.js"></script>
-  <!-- Google Fonts: Inter (UI text) + Playfair Display (headings, classic feel) -->
+  <!-- Google Fonts: Noto Sans Tamil (Tamil headings/text) + Inter (Latin text and numbers) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            serif: ['"Playfair Display"', 'serif'],
+            sans: ['Inter', '"Noto Sans Tamil"', 'sans-serif'],
+            serif: ['"Noto Sans Tamil"', 'Inter', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
+            // brand = Deep Maroon (#7B1E1E at 600); accent = Temple Gold (#D4AF37 at 500)
             brand: {
-              50: '#eef4f0',
-              100: '#d7e6dc',
-              200: '#b0cdba',
-              300: '#86b193',
-              400: '#5f9373',
-              500: '#427557',
-              600: '#315d44',
-              700: '#234a35',
-              800: '#1a3a29',
-              900: '#12281c',
+              50: '#fdf3f3',
+              100: '#f8e0e0',
+              200: '#efc0c0',
+              300: '#df9494',
+              400: '#c26565',
+              500: '#a13c3c',
+              600: '#7B1E1E',
+              700: '#661818',
+              800: '#501313',
+              900: '#3a0e0e',
             },
             accent: {
-              50: '#fdf2ed',
-              100: '#fbe1d2',
-              200: '#f5c2a8',
-              300: '#eda176',
-              400: '#e07f4c',
-              500: '#c7602f',
-              600: '#ab4d24',
-              700: '#8a3d1d',
-              800: '#6b2f17',
+              50: '#fcf8e8',
+              100: '#f7efc9',
+              200: '#efdf95',
+              300: '#e6cc63',
+              400: '#dcba42',
+              500: '#D4AF37',
+              600: '#b8932a',
+              700: '#8c6f1d',
+              800: '#6a5416',
             }
           }
         }
@@ -50,12 +51,108 @@
     }
   </script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    /* ===== Temple Gold & Maroon theme ===== */
+    :root {
+      --maroon: #7B1E1E;
+      --maroon-deep: #4F1010;
+      --gold: #D4AF37;
+      --gold-soft: #FBF3D5;
+      --gold-line: #EADFC4;
+      --cream: #F8F6F1;
+      --ink: #3B2323;
+      --field-line: #D9CDB4;
+    }
+    body { font-family: 'Inter', 'Noto Sans Tamil', sans-serif; background-color: var(--cream); color: var(--ink); }
+
+    /* Header: maroon gradient with a temple-gold rule */
+    .tg-header { background: linear-gradient(100deg, #4F1010 0%, #7B1E1E 50%, #94302A 100%); border-bottom: 3px solid var(--gold); box-shadow: 0 4px 18px rgba(79, 16, 16, .28); }
+    .tg-title { font-family: 'Noto Sans Tamil', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.25; color: #fff; }
+    .tg-header-btn { color: #fff; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .35); border-radius: 10px; font-size: 13px; font-weight: 600; padding: 7px 12px; transition: background-color .15s, color .15s, border-color .15s, box-shadow .15s; }
+    .tg-header-btn:hover { background: var(--gold); border-color: var(--gold); color: var(--maroon-deep); box-shadow: 0 0 0 3px rgba(212, 175, 55, .3); }
+
+    /* Cards and section headers */
+    .tg-card { background: #fff; border: 1px solid var(--gold-line); border-radius: 14px; box-shadow: 0 2px 12px rgba(123, 30, 30, .07), 0 1px 2px rgba(0, 0, 0, .04); overflow: hidden; }
+    .tg-modal { box-shadow: 0 24px 60px rgba(43, 12, 12, .4); }
+    .tg-section-head { padding: 14px 20px; background: linear-gradient(180deg, #FFFDF6 0%, #FBF5E1 100%); border-bottom: 2px solid var(--gold); }
+    .tg-section-title { font-family: 'Noto Sans Tamil', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--maroon); }
+    .tg-panel-title { font-family: 'Noto Sans Tamil', sans-serif; font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--maroon); }
+
+    /* Form: 15px labels and inputs, gold focus */
+    #userForm label, #eventModalOverlay label { font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: #4A2B2B; }
+    #userForm input:not([type="checkbox"]):not([type="hidden"]),
+    #userForm textarea,
+    #eventModalOverlay input,
+    #eventModalOverlay select,
+    #searchModalOverlay input,
+    #denominationRows input,
+    #sidebarSearchInput {
+      font-size: 15px; color: #2B1B1B; background-color: #fff; border: 1px solid var(--field-line); border-radius: 10px;
+    }
+    #userForm input:not([type="checkbox"]):not([type="hidden"]),
+    #userForm textarea,
+    #eventModalOverlay input,
+    #eventModalOverlay select { padding: 10px 12px; }
+    #userForm input:not([type="checkbox"]):not([type="hidden"]):disabled { background-color: #F4EFE3; color: #8A7A5A; }
+    #isThaimama { accent-color: var(--maroon); width: 22px; height: 22px; }
+    #userForm .grid { align-items: end; }
     /* Highlights whichever field currently has focus, so tabbing/jumping between fields is easy to spot at a glance. */
     #userForm input:not([type="checkbox"]):not([type="hidden"]):focus,
     #userForm textarea:focus,
+    #eventModalOverlay input:focus,
+    #eventModalOverlay select:focus,
+    #searchModalOverlay input:focus,
+    #sidebarSearchInput:focus,
     #denominationRows input:focus {
-      background-color: #ecfdf5;
+      outline: none; border-color: var(--gold); background-color: #FFF8E1; box-shadow: 0 0 0 3px rgba(212, 175, 55, .3);
+    }
+
+    /* Buttons: green save, blue print, orange reset, maroon primary; every one gets a gold hover glow */
+    .tg-btn { font-size: 15px; font-weight: 600; line-height: 1.3; color: #fff; border: 1px solid transparent; border-radius: 10px; padding: 10px 18px; cursor: pointer; transition: transform .15s, box-shadow .15s, background-color .15s, border-color .15s, color .15s; }
+    .tg-btn-sm { font-size: 14px; padding: 8px 14px; }
+    .tg-btn-tight { padding-left: 11px; padding-right: 11px; }
+    .tg-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212, 175, 55, .35), 0 6px 14px rgba(60, 20, 20, .18); }
+    .tg-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(212, 175, 55, .6); }
+    .tg-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .tg-btn-save { background-color: #2E7D32; }
+    .tg-btn-save:hover:not(:disabled) { background-color: #276B2B; }
+    .tg-btn-print { background-color: #1565C0; }
+    .tg-btn-print:hover:not(:disabled) { background-color: #1157A6; }
+    .tg-btn-reset { background-color: #EF6C00; }
+    .tg-btn-reset:hover:not(:disabled) { background-color: #D75F00; }
+    .tg-btn-primary { background: linear-gradient(135deg, #7B1E1E 0%, #5A1414 100%); }
+    .tg-btn-gold { color: var(--maroon); background-color: var(--gold-soft); border-color: var(--gold); }
+    .tg-btn-gold:hover:not(:disabled) { color: var(--maroon-deep); background-color: var(--gold); }
+    .tg-btn-ghost { color: #5B3A3A; background-color: #fff; border-color: var(--field-line); }
+    .tg-btn-ghost:hover:not(:disabled) { background-color: var(--gold-soft); }
+
+    /* Denomination tally rows */
+    #denominationRows input { width: 56px; padding: 6px 4px; text-align: center; font-weight: 600; }
+    #denominationRows button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--field-line); color: var(--maroon); background-color: #fff; font-size: 16px; transition: background-color .15s, border-color .15s; }
+    #denominationRows button:hover { background-color: var(--gold-soft); border-color: var(--gold); }
+    #denominationRows [id^="denomSubtotal"] { width: 72px; font-size: 15px; color: var(--maroon); }
+
+    /* Sidebar list and side panels */
+    #sidebarRecordsList button:hover { background-color: #FBF5E1; }
+    #sidebarRecordsList button p:first-child { font-size: 14px; color: var(--maroon); }
+    #sidebarRecordsList button p + p { font-size: 12px; }
+    #myCollectionsBody, #adminCountersBody, #denominationSummaryBody, #groupBatchList { font-size: 14px; }
+    .tg-chips > button { font-size: 13px; padding: 6px 12px; border-radius: 10px; transition: box-shadow .15s, background-color .15s; }
+    .tg-chips > button:hover { box-shadow: 0 0 0 2px rgba(212, 175, 55, .45); }
+
+    @media (max-width: 400px) {
+      #denominationRows > div { padding-left: 12px; padding-right: 12px; gap: 4px; }
+      #denominationRows > div > div:nth-child(2) { gap: 3px; }
+      #denominationRows > div > span:first-child { width: 60px; }
+      #denominationRows input { width: 46px; }
+      #denominationRows button { width: 28px; height: 28px; }
+      #denominationRows [id^="denomSubtotal"] { width: 58px; font-size: 14px; }
+    }
+    @media (max-width: 640px) {
+      .tg-title { font-size: 26px; }
+      .tg-section-head { padding: 12px 16px; }
+      #userForm input:not([type="checkbox"]):not([type="hidden"]),
+      #userForm textarea { padding: 12px 14px; }
+      .tg-btn { padding: 12px 18px; }
     }
     /* Printable receipt: invisible in the normal UI, shown only inside the browser's print dialog/preview. */
     #receiptPrintArea { display: none; }
@@ -66,7 +163,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col antialiased">
+<body class="text-slate-900 min-h-screen flex flex-col antialiased">
 
   <!-- Staff Login Overlay: full-bleed split screen (branding panel + form panel), blocks the whole Admin Panel until a counter/admin PIN is entered. -->
   <div id="staffLoginOverlay" class="fixed inset-0 z-50 flex flex-col md:flex-row">
@@ -77,18 +174,18 @@
     ></div>
 
     <!-- Right: the actual login form, full height -->
-    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-slate-50">
+    <div class="flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#F8F6F1]">
       <div class="w-full max-w-sm">
         <!-- Brand mark, shown directly above the login form -->
         <div class="mb-8">
           <h2 class="text-5xl font-bold font-serif tracking-tight leading-none">
-            <span class="text-brand-700">மொய்</span><span class="bg-gradient-to-r from-accent-600 via-accent-500 to-amber-400 bg-clip-text text-transparent">செய்</span>
+            <span class="text-brand-600">மொய்</span><span class="bg-gradient-to-r from-accent-600 via-accent-500 to-amber-400 bg-clip-text text-transparent">செய்</span>
           </h2>
           <div class="h-1.5 w-20 bg-gradient-to-r from-accent-600 to-amber-400 rounded-full mt-3"></div>
         </div>
 
         <!-- Role selector: purely a UX hint (the PIN itself determines the real account); mismatches are rejected on submit. -->
-        <div class="grid grid-cols-2 gap-1 mb-5 p-1 bg-slate-100 rounded-lg">
+        <div class="grid grid-cols-2 gap-1 mb-5 p-1 bg-[#EFE7D2] rounded-xl">
           <button type="button" id="loginRoleAdminBtn" onclick="selectLoginRole('admin')" class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md transition-colors">
             🛡️ நிர்வாகி <span class="hidden sm:inline">(Admin)</span>
           </button>
@@ -110,11 +207,11 @@
               autocomplete="off"
               placeholder="••••"
               required
-              class="block w-full text-center tracking-[0.5em] text-2xl font-bold rounded-lg border-2 border-slate-200 px-3.5 py-3 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 transition-colors"
+              class="block w-full text-center tracking-[0.5em] text-2xl font-bold rounded-xl border-2 border-[#D9CDB4] px-3.5 py-3 bg-white focus:border-accent-500 focus:outline-none focus:ring-4 focus:ring-accent-200 transition-colors"
             >
           </div>
           <div id="staffLoginError" class="hidden text-xs text-red-600 text-center font-medium bg-red-50 border border-red-100 rounded-md py-2 px-3"></div>
-          <button type="submit" class="w-full px-4 py-3 bg-accent-600 hover:bg-accent-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all">
+          <button type="submit" class="tg-btn tg-btn-primary w-full py-3 text-base">
             உள்நுழைக (Login)
           </button>
         </form>
@@ -124,27 +221,27 @@
   </div>
 
   <!-- 1. Header with Title & API Health/Status -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+  <header class="tg-header sticky top-0 z-30">
+    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
-        <div class="w-11 h-11 rounded-full bg-gradient-to-br from-brand-600 to-accent-600 text-white flex items-center justify-center shadow-md ring-2 ring-white">
-          <span class="font-serif text-xl font-bold leading-none">ம</span>
+        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-accent-300 to-accent-600 text-brand-800 flex items-center justify-center shadow-md ring-2 ring-white/80">
+          <span class="font-serif text-2xl font-bold leading-none">ம</span>
         </div>
         <div>
-          <h1 class="text-2xl font-bold font-serif tracking-tight leading-tight"><span class="text-brand-700">மொய்</span><span class="text-accent-600">செய்</span></h1>
-          <p class="text-xs text-slate-500 font-medium">FastAPI CRUD Console &bull; <span class="font-mono text-slate-600">http://127.0.0.1:8001</span></p>
+          <h1 class="tg-title">மொய்செய்</h1>
+          <p class="text-xs text-white/80 font-medium">FastAPI CRUD Console &bull; <span class="font-mono text-accent-200">http://127.0.0.1:8001</span></p>
         </div>
       </div>
 
-      <div class="flex items-center space-x-3">
+      <div class="flex flex-wrap items-center gap-2.5">
         <!-- Logged-in staff badge + Logout -->
-        <div id="staffBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-brand-50 text-brand-700 border border-brand-200">
+        <div id="staffBadge" class="hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-100 text-brand-700 border border-accent-400">
           👤 <span id="staffNameText"></span>
         </div>
         <button
           onclick="handleStaffLogout()"
           id="logoutBtn"
-          class="hidden inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">
+          class="tg-header-btn hidden inline-flex items-center gap-1">
           வெளியேறு
         </button>
 
@@ -153,7 +250,7 @@
           onclick="openLastReceiptModal()"
           id="lastReceiptBtn"
           title="கடைசியாக பதிவு செய்த ரசீதைக் காட்டு"
-          class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">
+          class="tg-header-btn inline-flex items-center gap-1">
           🧾 கடைசி ரசீது
         </button>
 
@@ -166,8 +263,8 @@
         <button 
           onclick="loadUsers()" 
           id="reloadBtn"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors shadow-xs">
-          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="tg-header-btn inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
           Reload Users
@@ -190,15 +287,15 @@
   </div>
 
   <!-- Main Content Layout: Three Columns (Left Search/Recent, Middle Form, Right Tally) -->
-  <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full flex-1">
-    <div class="grid grid-cols-1 xl:grid-cols-[repeat(14,minmax(0,1fr))] gap-4 items-start">
+  <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(196px,2fr)_minmax(0,5.2fr)_332px_minmax(0,4fr)] gap-5 items-start">
 
       <!-- LEFT SIDEBAR: Inline Search + Last 10 Recent Records (2 cols on lg) -->
-      <section class="xl:col-span-2 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col">
-        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center">
-          <h2 class="text-sm font-semibold font-serif text-slate-900">தேடு / Search</h2>
+      <section class="tg-card flex flex-col">
+        <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
+          <h2 class="tg-section-title">தேடு / Search</h2>
         </div>
-        <div class="p-2.5 border-b border-slate-100">
+        <div class="p-3 border-b border-[#EADFC4]">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -212,20 +309,20 @@
             >
           </div>
         </div>
-        <div id="sidebarListTitle" class="px-3.5 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">சமீபத்தியவை</div>
-        <div id="sidebarRecordsList" class="flex-1 overflow-y-auto max-h-[60vh] divide-y divide-slate-50"></div>
+        <div id="sidebarListTitle" class="px-4 py-2 text-[13px] font-semibold text-accent-700 tracking-wide">சமீபத்தியவை</div>
+        <div id="sidebarRecordsList" class="flex-1 overflow-y-auto max-h-[60vh] divide-y divide-[#F3ECD9]"></div>
       </section>
 
       <!-- MIDDLE COLUMN: User Registration & Edit Form (5 cols on lg) -->
-      <section class="xl:col-span-4 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
-          <h2 class="text-sm font-semibold font-serif text-slate-900">குடும்ப விவரங்கள்</h2>
+      <section class="tg-card">
+        <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
+          <h2 class="tg-section-title">குடும்ப விவரங்கள்</h2>
           <!-- Kept but hidden: existing edit-mode JS still updates these, just no longer shown in the header. -->
           <h2 id="formTitle" class="hidden"></h2>
           <p id="formSubtitle" class="hidden"></p>
         </div>
 
-        <form id="userForm" onsubmit="handleFormSubmit(event)" class="px-4 pb-4 pt-0 space-y-3">
+        <form id="userForm" onsubmit="handleFormSubmit(event)" class="px-5 pb-5 pt-5 space-y-4">
           <!-- Hidden input to store User ID during Edit mode -->
           <input type="hidden" id="userId" value="">
 
@@ -339,15 +436,15 @@
           <input type="hidden" id="initial" name="initial">
 
           <!-- Form Actions: sticky to the viewport bottom so Save is always reachable without scrolling -->
-          <div class="sticky bottom-0 z-10 -mx-4 px-4 pt-2 pb-2 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
-            <button type="button" onclick="addCurrentContributorToGroup()" title="Add this contributor and amount to the group (Ctrl+G)" class="w-full sm:w-auto inline-flex justify-center items-center px-3 py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <div class="sticky bottom-0 z-10 -mx-5 px-5 pt-3 pb-3 bg-white border-t border-[#EADFC4] flex flex-wrap items-stretch gap-2.5">
+            <button type="button" onclick="addCurrentContributorToGroup()" title="Add this contributor and amount to the group (Ctrl+G)" class="tg-btn tg-btn-gold tg-btn-sm w-full sm:w-auto inline-flex justify-center items-center">
               குழுவில் சேர் (Ctrl+G)
             </button>
             <!-- Submit (Save / Update) Button -->
             <button 
               type="submit" 
               id="submitBtn" 
-              class="w-full sm:flex-1 inline-flex justify-center items-center px-4 py-2.5 bg-accent-600 hover:bg-accent-700 text-white text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              class="tg-btn tg-btn-save w-full sm:flex-1 inline-flex justify-center items-center">
               <span id="submitSpinner" class="hidden mr-2">
                 <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               </span>
@@ -359,7 +456,7 @@
               type="button" 
               id="cancelEditBtn" 
               onclick="cancelEdit()" 
-              class="hidden w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-slate-400 transition-colors">
+              class="tg-btn tg-btn-ghost hidden w-full sm:w-auto">
               திருத்தத்தை ரத்து செய்
             </button>
 
@@ -368,7 +465,7 @@
               type="button" 
               id="clearBtn" 
               onclick="clearForm()" 
-              class="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300">
+              class="tg-btn tg-btn-reset w-full sm:w-auto">
               அழிக்கவும்
             </button>
           </div>
@@ -376,52 +473,52 @@
       </section>
 
       <!-- RIGHT COLUMN: Cash Denomination Tally + Live Match Comparator (5 cols on lg) -->
-      <section class="xl:col-span-4 space-y-3">
+      <section class="w-full max-w-[400px] mx-auto xl:max-w-none xl:mx-0 space-y-5">
 
         <!-- Cash Denomination Tally Card -->
-        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
-            <h3 class="text-sm font-semibold font-serif text-slate-900">ரொக்க நோட்டுகள் சரிபார்ப்பு</h3>
+        <div class="tg-card">
+          <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
+            <h3 class="tg-section-title">நோட்டுகள் சரிபார்ப்பு</h3>
           </div>
 
-          <div id="denominationRows" class="divide-y divide-slate-100"></div>
+          <div id="denominationRows" class="divide-y divide-[#F3ECD9]"></div>
         </div>
 
         <!-- Live Match Comparator Card -->
-        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="tg-card">
 
           <div class="p-2 grid grid-cols-3 gap-1.5">
             <div class="rounded-md border border-slate-200 px-2 py-1">
-              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">படிவத் தொகை</div>
+              <div class="text-[10px] text-slate-500 leading-tight">படிவத் தொகை</div>
               <div id="formAmountDisplay" class="text-base font-bold text-slate-900">₹0</div>
             </div>
             <div id="varianceBox" class="rounded-md border px-2 py-1 border-emerald-200 bg-emerald-50">
-              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">வித்தியாசம்</div>
+              <div class="text-[10px] text-slate-500 leading-tight">வித்தியாசம்</div>
               <div id="varianceDisplay" class="text-base font-bold text-emerald-900">₹0</div>
             </div>
             <div class="rounded-md border border-slate-200 px-2 py-1">
-              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">எண்ணிய ரொக்கம்</div>
+              <div class="text-[10px] text-slate-500 leading-tight">எண்ணிய ரொக்கம்</div>
               <div id="cashCountedDisplay" class="text-base font-bold text-slate-900">₹0</div>
             </div>
           </div>
 
-          <div class="sticky bottom-0 z-10 px-3 py-1.5 border-t border-slate-100 flex items-center justify-center gap-2 bg-slate-50/95">
-            <div class="flex gap-2">
-              <button type="button" onclick="printTallySlip()" class="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">ரசீது / Print</button>
-              <button type="button" onclick="confirmTally()" class="px-2.5 py-1.5 text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 rounded-md transition-colors">உறுதி செய் (Ctrl+Enter)</button>
+          <div class="sticky bottom-0 z-10 px-2 py-2.5 border-t border-[#EADFC4] flex items-center justify-center gap-2 bg-[#FFFDF6]">
+            <div class="flex flex-wrap justify-center gap-1.5">
+              <button type="button" onclick="printTallySlip()" class="tg-btn tg-btn-print tg-btn-sm tg-btn-tight">ரசீது / Print</button>
+              <button type="button" onclick="confirmTally()" class="tg-btn tg-btn-primary tg-btn-sm tg-btn-tight">உறுதி செய் (Ctrl+Enter)</button>
             </div>
           </div>
         </div>
 
         <!-- Group Contribution box: always visible, body stays blank until someone is added with Ctrl+G. -->
-        <div id="groupBatchPanel" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
-            <h3 class="text-sm font-semibold font-serif text-slate-900">குழு பங்களிப்பு</h3>
+        <div id="groupBatchPanel" class="tg-card">
+          <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
+            <h3 class="tg-section-title">குழு பங்களிப்பு</h3>
           </div>
-          <div id="groupBatchList" class="px-4 py-2 space-y-1.5 text-xs min-h-[72px] max-h-56 overflow-y-auto"></div>
-          <div id="groupBatchFooter" class="hidden px-4 py-2 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
-            <span class="text-slate-500"><span id="groupBatchCount">0</span> பேர்</span>
-            <span class="text-slate-500">மொத்தம்: <strong id="groupBatchTotal" class="text-slate-900">₹0</strong></span>
+          <div id="groupBatchList" class="px-4 py-2 space-y-1.5 min-h-[72px] max-h-56 overflow-y-auto"></div>
+          <div id="groupBatchFooter" class="hidden px-4 py-2.5 border-t border-[#EADFC4] bg-[#FFFDF6] flex items-center justify-between text-sm">
+            <span class="text-slate-600"><span id="groupBatchCount">0</span> பேர்</span>
+            <span class="text-slate-600">மொத்தம்: <strong id="groupBatchTotal" class="text-brand-600">₹0</strong></span>
           </div>
         </div>
 
@@ -429,22 +526,22 @@
 
        <!-- RIGHT RAIL: Event/Receiver context + status panels, kept visually separate
          from the Denomination Tally workflow column so that one starts right at the top. -->
-      <section class="md:col-span-4 space-y-4">
+      <section class="space-y-5">
 
         <!-- Event & Receiver: compact status bar. Full picker lives in a modal (Ctrl+E) so it doesn't occupy the page. -->
-        <div class="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-          <div class="px-5 py-4 border-b border-black bg-slate-50/70 min-h-[76px] flex items-center">
-            <div class="flex items-center gap-1.5 flex-wrap text-xs text-slate-600">
-              <span class="font-semibold text-slate-900">நிகழ்வு:</span>
+        <div class="tg-card">
+          <div class="tg-section-head min-h-[64px] flex items-center">
+            <div class="flex items-center gap-2 flex-wrap text-[15px] text-slate-700">
+              <span class="font-bold text-brand-600">நிகழ்வு:</span>
               <span id="eventStatusText">தேர்ந்தெடுக்கப்படவில்லை</span>
-              <span class="text-slate-300">|</span>
-              <span class="font-semibold text-slate-900">பெறுநர்:</span>
+              <span class="text-accent-500">|</span>
+              <span class="font-bold text-brand-600">பெறுநர்:</span>
               <span id="receiverStatusText">—</span>
             </div>
           </div>
-          <div class="px-4 py-2.5 space-y-2">
-            <div class="flex items-center gap-2 flex-wrap">
-              <button type="button" onclick="toggleDenominationSummary()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors">
+          <div class="px-5 py-3 space-y-2.5">
+            <div class="tg-chips flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="toggleDenominationSummary()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-300 rounded-md transition-colors">
                 📊 நோட்டு சுருக்கம்
               </button>
               <button type="button" id="myCollectionsToggleBtn" onclick="toggleMyCollections()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
@@ -454,63 +551,63 @@
                 🛠 கவுண்டர்கள்
               </button>
               <button type="button" onclick="openEventModal()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition-colors">
-                மாற்று (Ctrl+E)
+                நிகழ்வைத் தேர்ந்தெடு (Ctrl+E)
               </button>
             </div>
-            <p id="activeContributorLabel" class="w-full text-[11px] text-slate-400"></p>
+            <p id="activeContributorLabel" class="w-full text-[13px] text-slate-500"></p>
           </div>
         </div>
 
         <!-- My Collections: hidden by default, toggled on demand. Shows only what THIS logged-in counter recorded. -->
-        <div id="myCollectionsPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+        <div id="myCollectionsPanel" class="hidden tg-card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h3 class="text-xs font-semibold font-serif text-slate-900">எனது வசூல்கள் (இந்த நிகழ்விற்கு)</h3>
-              <p class="text-[11px] text-slate-500">My Collections for this Event</p>
+              <h3 class="tg-panel-title">எனது வசூல்கள் (இந்த நிகழ்விற்கு)</h3>
+              <p class="text-xs text-slate-500">My Collections for this Event</p>
             </div>
-            <span id="myCollectionsTotal" class="text-sm font-extrabold text-accent-700">₹0</span>
+            <span id="myCollectionsTotal" class="text-lg font-extrabold text-brand-600">₹0</span>
           </div>
-          <div id="myCollectionsBody" class="space-y-1.5 text-xs max-h-56 overflow-y-auto"></div>
+          <div id="myCollectionsBody" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
         </div>
 
         <!-- Admin-only: all counters combined, plus a mini form to create new counter logins. -->
-        <div id="adminCountersPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+        <div id="adminCountersPanel" class="hidden tg-card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h3 class="text-xs font-semibold font-serif text-slate-900">அனைத்து கவுண்டர்களும் (நிர்வாகி)</h3>
-              <p class="text-[11px] text-slate-500">All Counters Summary (Admin)</p>
+              <h3 class="tg-panel-title">அனைத்து கவுண்டர்களும் (நிர்வாகி)</h3>
+              <p class="text-xs text-slate-500">All Counters Summary (Admin)</p>
             </div>
             <button type="button" onclick="toggleCreateStaffForm()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
               + புதிய கவுண்டர்
             </button>
           </div>
-          <div id="adminCountersBody" class="space-y-1.5 text-xs"></div>
+          <div id="adminCountersBody" class="space-y-1.5"></div>
 
-          <div id="createStaffForm" class="hidden mt-3 pt-3 border-t border-slate-100 space-y-2">
-            <input type="text" id="newStaffName" placeholder="பெயர் (எ.கா. Counter 4)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-            <input type="text" id="newStaffPin" placeholder="PIN (4-6 இலக்கங்கள்)" inputmode="numeric" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-            <select id="newStaffRole" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <div id="createStaffForm" class="hidden mt-3 pt-3 border-t border-[#EADFC4] space-y-2">
+            <input type="text" id="newStaffName" placeholder="பெயர் (எ.கா. Counter 4)" class="block w-full rounded-lg border border-[#D9CDB4] px-3 py-2 text-[15px] focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+            <input type="text" id="newStaffPin" placeholder="PIN (4-6 இலக்கங்கள்)" inputmode="numeric" class="block w-full rounded-lg border border-[#D9CDB4] px-3 py-2 text-[15px] focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
+            <select id="newStaffRole" class="block w-full rounded-lg border border-[#D9CDB4] px-3 py-2 text-[15px] focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-200">
               <option value="counter">Counter</option>
               <option value="admin">Admin</option>
             </select>
             <div class="flex gap-2">
-              <button type="button" onclick="submitNewStaff()" class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition-colors">உருவாக்கு</button>
-              <button type="button" onclick="toggleCreateStaffForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">ரத்து</button>
+              <button type="button" onclick="submitNewStaff()" class="tg-btn tg-btn-save tg-btn-sm flex-1">உருவாக்கு</button>
+              <button type="button" onclick="toggleCreateStaffForm()" class="tg-btn tg-btn-ghost tg-btn-sm">ரத்து</button>
             </div>
           </div>
         </div>
 
         <!-- Denomination Summary: hidden by default, toggled on demand so it doesn't clutter the screen -->
-        <div id="denominationSummaryPanel" class="hidden bg-white border border-slate-200 rounded-xl shadow-xs p-4">
+        <div id="denominationSummaryPanel" class="hidden tg-card p-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <h3 class="text-xs font-semibold font-serif text-slate-900">இந்த நிகழ்விற்கான நோட்டு சுருக்கம்</h3>
-              <p class="text-[11px] text-slate-500">Live Denomination Summary for this Event</p>
+              <h3 class="tg-panel-title">இந்த நிகழ்விற்கான நோட்டு சுருக்கம்</h3>
+              <p class="text-xs text-slate-500">Live Denomination Summary for this Event</p>
             </div>
-            <span id="denominationSummaryTotal" class="text-sm font-extrabold text-emerald-700">₹0</span>
+            <span id="denominationSummaryTotal" class="text-lg font-extrabold text-brand-600">₹0</span>
           </div>
-          <div id="denominationSummaryBody" class="space-y-1.5 text-xs"></div>
-          <p class="text-[10px] text-slate-400 mt-2">* இந்த அம்சம் தொடங்கியபின் பதிவான பங்களிப்புகளுக்கு மட்டும் நோட்டு எண்ணிக்கை கிடைக்கும்.</p>
+          <div id="denominationSummaryBody" class="space-y-1.5"></div>
+          <p class="text-xs text-slate-400 mt-2">* இந்த அம்சம் தொடங்கியபின் பதிவான பங்களிப்புகளுக்கு மட்டும் நோட்டு எண்ணிக்கை கிடைக்கும்.</p>
         </div>
 
       </section>
@@ -518,7 +615,7 @@
   </main>
 
   <!-- Technical Implementation Footer -->
-  <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+  <footer class="bg-white border-t-2 border-accent-500 mt-auto py-4">
     <div class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
       <div>
         <span>API Base URL: </span>
@@ -532,11 +629,11 @@
   </footer>
 
   <!-- Event & Receiver Modal: one-time-per-session picker (Ctrl+E), kept off the main page -->
-  <div id="eventModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeEventModalOnBackdrop(event)">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mt-10 overflow-hidden" onclick="event.stopPropagation()">
-      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+  <div id="eventModalOverlay" class="hidden fixed inset-0 bg-[#2b0c0c]/60 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeEventModalOnBackdrop(event)">
+    <div class="tg-card tg-modal w-full max-w-md mt-10" onclick="event.stopPropagation()">
+      <div class="tg-section-head flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-semibold font-serif text-slate-900">நிகழ்வு &amp; பெறுநர்</h3>
+          <h3 class="tg-section-title">நிகழ்வு &amp; பெறுநர்</h3>
           <p class="text-xs text-slate-500 mt-0.5">Event &amp; Receiver</p>
         </div>
         <button type="button" onclick="closeEventModal()" class="text-slate-400 hover:text-slate-600">
@@ -563,8 +660,8 @@
           </div>
           <input type="text" id="newEventLocation" placeholder="ஊர் (விருப்பத்திற்குரியது)" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
           <div class="flex gap-2">
-            <button type="button" onclick="submitNewEvent()" class="flex-1 px-3 py-2 bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold rounded-md transition-colors">சேமிக்கவும்</button>
-            <button type="button" onclick="toggleNewEventForm()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">ரத்து</button>
+            <button type="button" onclick="submitNewEvent()" class="tg-btn tg-btn-save tg-btn-sm flex-1">சேமிக்கவும்</button>
+            <button type="button" onclick="toggleNewEventForm()" class="tg-btn tg-btn-ghost tg-btn-sm">ரத்து</button>
           </div>
         </div>
 
@@ -579,17 +676,17 @@
           </select>
         </div>
 
-        <button type="button" onclick="closeEventModal()" class="w-full px-4 py-2.5 bg-accent-600 hover:bg-accent-700 text-white text-sm font-semibold rounded-md transition-colors">முடிந்தது (Done)</button>
+        <button type="button" onclick="closeEventModal()" class="tg-btn tg-btn-primary w-full">முடிந்தது (Done)</button>
       </div>
     </div>
   </div>
 
   <!-- Last Receipt Modal: on-screen preview of the most recently auto-printed receipt, so it can be reviewed/reprinted without a physical printer. -->
-  <div id="lastReceiptModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeLastReceiptModalOnBackdrop(event)">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mt-10 overflow-hidden" onclick="event.stopPropagation()">
-      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+  <div id="lastReceiptModalOverlay" class="hidden fixed inset-0 bg-[#2b0c0c]/60 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeLastReceiptModalOnBackdrop(event)">
+    <div class="tg-card tg-modal w-full max-w-sm mt-10" onclick="event.stopPropagation()">
+      <div class="tg-section-head flex items-center justify-between">
         <div>
-          <h3 class="text-sm font-semibold font-serif text-slate-900">கடைசி ரசீது</h3>
+          <h3 class="tg-section-title">கடைசி ரசீது</h3>
           <p class="text-xs text-slate-500 mt-0.5">Last Receipt Preview</p>
         </div>
         <button type="button" onclick="closeLastReceiptModal()" class="text-slate-400 hover:text-slate-600">
@@ -600,19 +697,19 @@
       <div id="lastReceiptModalBody" class="p-5 text-sm"></div>
 
       <div class="px-5 pb-5 flex gap-2">
-        <button type="button" onclick="reprintLastReceipt()" class="flex-1 px-3 py-2 bg-accent-600 hover:bg-accent-700 text-white text-xs font-semibold rounded-md transition-colors">🖨 மீண்டும் அச்சிடு (Print)</button>
-        <button type="button" onclick="closeLastReceiptModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">மூடு</button>
+        <button type="button" onclick="reprintLastReceipt()" class="tg-btn tg-btn-print tg-btn-sm flex-1">🖨 மீண்டும் அச்சிடு (Print)</button>
+        <button type="button" onclick="closeLastReceiptModal()" class="tg-btn tg-btn-ghost tg-btn-sm">மூடு</button>
       </div>
     </div>
   </div>
 
   <!-- Search Modal: find an existing family to edit (triggered by the தேடு button on the form) -->
-  <div id="searchModalOverlay" class="hidden fixed inset-0 bg-slate-900/50 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeSearchModalOnBackdrop(event)">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mt-6 overflow-hidden" onclick="event.stopPropagation()">
-      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+  <div id="searchModalOverlay" class="hidden fixed inset-0 bg-[#2b0c0c]/60 z-40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto" onclick="closeSearchModalOnBackdrop(event)">
+    <div class="tg-card tg-modal w-full max-w-2xl mt-6" onclick="event.stopPropagation()">
+      <div class="tg-section-head flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <h3 class="text-sm font-semibold font-serif text-slate-900">குடும்பத்தைத் தேடவும்</h3>
-          <span id="userCountBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">0</span>
+          <h3 class="tg-section-title">குடும்பத்தைத் தேடவும்</h3>
+          <span id="userCountBadge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-accent-100 text-brand-700 border border-accent-300">0</span>
         </div>
         <button type="button" onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -638,7 +735,7 @@
             <button 
               type="submit" 
               id="searchBtn"
-              class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white text-sm font-semibold rounded-md shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-700 transition-colors">
+              class="tg-btn tg-btn-primary flex-1 sm:flex-none inline-flex items-center justify-center">
               <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
@@ -648,7 +745,7 @@
               type="button" 
               onclick="resetSearch()" 
               id="resetSearchBtn"
-              class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-sm font-medium rounded-md border border-slate-200 transition-colors"
+              class="tg-btn tg-btn-reset"
               title="தேடலை அழித்து அனைத்தையும் காட்டவும்">
               மீட்டமை
             </button>
@@ -688,7 +785,7 @@
         <div class="overflow-x-auto max-h-96 overflow-y-auto rounded-lg border border-slate-100">
           <table id="usersTable" class="w-full text-left border-collapse text-sm">
             <thead>
-              <tr class="border-b border-slate-200 bg-slate-50/50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+              <tr class="border-b-2 border-accent-500 bg-[#FBF5E1] text-[13px] text-brand-600 font-bold">
                 <th scope="col" class="py-3 px-4 w-16">வ.எண்</th>
                 <th scope="col" class="py-3 px-4">கணவர்</th>
                 <th scope="col" class="py-3 px-4">போன்</th>
@@ -1325,8 +1422,8 @@
     function renderDenominationRows() {
       const container = document.getElementById('denominationRows');
       container.innerHTML = DENOMINATIONS.map(value => `
-        <div class="flex items-center justify-between px-4 py-2 gap-2 flex-wrap">
-          <span class="inline-flex items-center justify-center px-2 py-1 rounded-md text-xs font-bold w-16 ${DENOMINATION_COLORS[value]}">\u20b9 ${value}</span>
+        <div class="flex items-center justify-between px-4 py-2.5 gap-2 flex-wrap">
+          <span class="inline-flex items-center justify-center px-2 py-1 rounded-lg text-sm font-bold w-[72px] ${DENOMINATION_COLORS[value]}">\u20b9 ${value}</span>
           <div class="flex items-center gap-1.5">
             <button type="button" tabindex="-1" onclick="adjustDenomination(${value}, -1)" class="w-7 h-7 flex items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold">-</button>
             <input type="number" min="0" id="denomCount${value}" value="0" oninput="handleDenominationInput(${value}, this.value)" class="w-14 text-center rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold">
