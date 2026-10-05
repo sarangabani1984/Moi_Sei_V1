@@ -340,6 +340,9 @@
 
           <!-- Form Actions: sticky to the viewport bottom so Save is always reachable without scrolling -->
           <div class="sticky bottom-0 z-10 -mx-4 px-4 pt-2 pb-2 bg-white border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
+            <button type="button" onclick="addCurrentContributorToGroup()" title="Add this contributor and amount to the group (Ctrl+G)" class="w-full sm:w-auto inline-flex justify-center items-center px-3 py-2.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-semibold rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500">
+              குழுவில் சேர் (Ctrl+G)
+            </button>
             <!-- Submit (Save / Update) Button -->
             <button 
               type="submit" 
@@ -387,22 +390,22 @@
         <!-- Live Match Comparator Card -->
         <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
 
-          <div class="p-2.5 grid grid-cols-3 gap-2">
-            <div class="rounded-md border border-slate-200 p-2">
-              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">படிவத் தொகை<br>(Form Amount)</div>
-              <div id="formAmountDisplay" class="text-lg font-bold text-slate-900">₹0</div>
+          <div class="p-2 grid grid-cols-3 gap-1.5">
+            <div class="rounded-md border border-slate-200 px-2 py-1">
+              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">படிவத் தொகை</div>
+              <div id="formAmountDisplay" class="text-base font-bold text-slate-900">₹0</div>
             </div>
-            <div id="varianceBox" class="rounded-md border p-2 border-emerald-200 bg-emerald-50">
-              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">வித்தியாசம்<br>(Variance)</div>
-              <div id="varianceDisplay" class="text-lg font-bold text-emerald-900">₹0</div>
+            <div id="varianceBox" class="rounded-md border px-2 py-1 border-emerald-200 bg-emerald-50">
+              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">வித்தியாசம்</div>
+              <div id="varianceDisplay" class="text-base font-bold text-emerald-900">₹0</div>
             </div>
-            <div class="rounded-md border border-slate-200 p-2">
-              <div class="text-[10px] text-slate-400 min-h-[26px] leading-tight">எண்ணிய ரொக்கம்<br>(Cash Counted)</div>
-              <div id="cashCountedDisplay" class="text-lg font-bold text-slate-900">₹0</div>
+            <div class="rounded-md border border-slate-200 px-2 py-1">
+              <div class="text-[10px] text-slate-500 leading-tight whitespace-nowrap">எண்ணிய ரொக்கம்</div>
+              <div id="cashCountedDisplay" class="text-base font-bold text-slate-900">₹0</div>
             </div>
           </div>
 
-          <div class="sticky bottom-0 z-10 px-3 py-2 border-t border-slate-100 flex items-center justify-center gap-2 bg-slate-50/95">
+          <div class="sticky bottom-0 z-10 px-3 py-1.5 border-t border-slate-100 flex items-center justify-center gap-2 bg-slate-50/95">
             <div class="flex gap-2">
               <button type="button" onclick="printTallySlip()" class="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">ரசீது / Print</button>
               <button type="button" onclick="confirmTally()" class="px-2.5 py-1.5 text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 rounded-md transition-colors">உறுதி செய் (Ctrl+Enter)</button>
@@ -410,10 +413,22 @@
           </div>
         </div>
 
+        <!-- Group Contribution box: always visible, body stays blank until someone is added with Ctrl+G. -->
+        <div id="groupBatchPanel" class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 min-h-[56px] flex items-center justify-center text-center">
+            <h3 class="text-sm font-semibold font-serif text-slate-900">குழு பங்களிப்பு</h3>
+          </div>
+          <div id="groupBatchList" class="px-4 py-2 space-y-1.5 text-xs min-h-[72px] max-h-56 overflow-y-auto"></div>
+          <div id="groupBatchFooter" class="hidden px-4 py-2 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs">
+            <span class="text-slate-500"><span id="groupBatchCount">0</span> பேர்</span>
+            <span class="text-slate-500">மொத்தம்: <strong id="groupBatchTotal" class="text-slate-900">₹0</strong></span>
+          </div>
+        </div>
+
       </section>
 
-      <!-- RIGHT RAIL: Event/Receiver context + Group Mode + status panels, kept visually separate
-           from the Denomination Tally workflow column so that one starts right at the top. -->
+       <!-- RIGHT RAIL: Event/Receiver context + status panels, kept visually separate
+         from the Denomination Tally workflow column so that one starts right at the top. -->
       <section class="md:col-span-4 space-y-4">
 
         <!-- Event & Receiver: compact status bar. Full picker lives in a modal (Ctrl+E) so it doesn't occupy the page. -->
@@ -432,9 +447,6 @@
               <button type="button" onclick="toggleDenominationSummary()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors">
                 📊 நோட்டு சுருக்கம்
               </button>
-              <button type="button" id="groupModeToggleBtn" onclick="toggleGroupMode()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-md transition-colors">
-                👥 குழு பங்களிப்பு (Ctrl+G)
-              </button>
               <button type="button" id="myCollectionsToggleBtn" onclick="toggleMyCollections()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
                 📒 எனது வசூல்கள்
               </button>
@@ -447,23 +459,6 @@
             </div>
             <p id="activeContributorLabel" class="w-full text-[11px] text-slate-400"></p>
           </div>
-        </div>
-
-        <!-- Group Mode banner: while active, Ctrl+S on the main form adds that person (with the current
-             Amount) to this running batch instead of just saving their profile; Ctrl+Enter posts every
-             person's contribution at once and prints one combined receipt. -->
-        <div id="groupModeBanner" class="hidden bg-violet-50 border border-violet-200 rounded-xl shadow-xs px-4 py-3 space-y-2">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <span class="text-xs font-bold text-violet-800">👥 குழு பயன்முறை இயங்குகிறது (Group Mode ON)</span>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-violet-700">சேர்க்கப்பட்டோர்: <strong id="groupBatchCount">0</strong> &bull; மொத்தம்: <strong id="groupBatchTotal">₹0</strong></span>
-              <button type="button" onclick="confirmGroupBatch()" class="px-2.5 py-1 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-md transition-colors">முடி (Ctrl+Enter)</button>
-              <button type="button" onclick="exitGroupMode()" class="px-2.5 py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors">ரத்து</button>
-            </div>
-          </div>
-          <input type="text" id="groupHandedOverBy" placeholder="கொண்டு வந்தவர் (விருப்பத்திற்குரியது)" class="block w-full rounded-md border border-violet-200 px-3 py-1.5 text-xs">
-          <div id="groupBatchList" class="text-[11px] text-violet-700 space-y-0.5 max-h-32 overflow-y-auto"></div>
-          <p class="text-[10px] text-violet-400">* வரிசையிலுள்ள படிவத்தில் விவரங்களை நிரப்பி, தொகையை நிரப்பி, Tab (அல்லது Ctrl+S) அழுத்தவும். முடிந்தபின் வலதுபுறத்துள்ள ரொக்க நோட்டு தாளியில் மொத்தத்தைத் தாளி எண்ணி பிறகு Ctrl+Enter அழுத்துக.</p>
         </div>
 
         <!-- My Collections: hidden by default, toggled on demand. Shows only what THIS logged-in counter recorded. -->
@@ -904,7 +899,7 @@
       }
     });
 
-    // Ctrl+S (or Cmd+S) saves the form; Ctrl+E opens the Event & Receiver picker; Ctrl+Enter confirms the tallied contribution. Escape closes whichever modal is open.
+    // Ctrl+S (or Cmd+S) saves the form; Ctrl+E opens the Event & Receiver picker; Ctrl+Enter confirms the contribution. Escape closes whichever modal is open.
     document.addEventListener('keydown', (event) => {
       const isSaveShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
       if (isSaveShortcut) {
@@ -918,23 +913,19 @@
       const isConfirmShortcut = (event.ctrlKey || event.metaKey) && event.key === 'Enter';
       if (isConfirmShortcut) {
         event.preventDefault();
-        if (groupModeActive) {
-          confirmGroupBatch();
-        } else {
-          confirmTally();
-        }
+        confirmTally();
+        return;
+      }
+      const isGroupAddShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'g';
+      if (isGroupAddShortcut) {
+        event.preventDefault();
+        addCurrentContributorToGroup();
         return;
       }
       const isEventShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'e';
       if (isEventShortcut) {
         event.preventDefault();
         openEventModal();
-        return;
-      }
-      const isGroupShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'g';
-      if (isGroupShortcut) {
-        event.preventDefault();
-        toggleGroupMode();
         return;
       }
       if (event.key === 'Escape') {
@@ -983,16 +974,14 @@
     let currentEventsList = [];
     let lastSavedContributorId = null;
     let lastSavedContributorName = '';
+    let groupBatch = [];
+    let groupEventId = null;
+    let groupReceiverId = null;
 
     // Auto-printed receipt: kept in localStorage so it can be re-viewed/reprinted even after a page reload,
     // since there's no physical printer here to verify output against — this is the only way to check it.
     const LAST_RECEIPT_KEY = 'eToE_last_receipt';
     let lastReceiptData = null;
-
-    // Group Mode: Ctrl+S on the main form adds the currently-filled-in person (profile + Amount) to this
-    // batch instead of just saving their profile; Ctrl+Enter posts every person's contribution at once.
-    let groupModeActive = false;
-    let groupBatch = []; // [{ contributorId, name, phone, amount }]
 
     async function loadEvents(selectEventId = null) {
       try {
@@ -1394,9 +1383,7 @@
         if (subtotalEl) subtotalEl.textContent = formatRupees(subtotal);
       });
 
-      // In Group Mode, the committed batch total is what actually gets posted/compared at Confirm —
-      // not whatever's currently typed in Amount for the next (not-yet-saved) person.
-      const formAmount = groupModeActive
+      const formAmount = groupBatch.length
         ? groupBatch.reduce((sum, entry) => sum + entry.amount, 0)
         : Math.round(Number(document.getElementById('amount').value) || 0);
       document.getElementById('formAmountDisplay').textContent = formatRupees(formAmount);
@@ -1407,12 +1394,12 @@
       const varianceDisplay = document.getElementById('varianceDisplay');
 
       if (variance === 0) {
-        varianceBox.className = 'rounded-md border p-2 border-emerald-200 bg-emerald-50';
-        varianceDisplay.className = 'text-lg font-bold text-emerald-900';
+        varianceBox.className = 'rounded-md border px-2 py-1 border-emerald-200 bg-emerald-50';
+        varianceDisplay.className = 'text-base font-bold text-emerald-900';
         varianceDisplay.textContent = formatRupees(0);
       } else {
-        varianceBox.className = 'rounded-lg border p-2.5 border-red-300 bg-red-50';
-        varianceDisplay.className = 'text-lg font-bold text-red-600';
+        varianceBox.className = 'rounded-md border px-2 py-1 border-red-300 bg-red-50';
+        varianceDisplay.className = 'text-base font-bold text-red-600';
         varianceDisplay.textContent = `${variance > 0 ? '+' : '-'}${formatRupees(Math.abs(variance))}`;
       }
     }
@@ -1428,6 +1415,19 @@
     }
 
     async function confirmTally() {
+      if (groupBatch.length > 0) {
+        const hasUnqueuedContributor = Boolean(
+          document.getElementById('phoneNumber').value.trim() ||
+          document.getElementById('husbandName').value.trim() ||
+          Number(document.getElementById('amount').value)
+        );
+        if (hasUnqueuedContributor) {
+          showGlobalAlert('தற்போதைய நபரை Ctrl+G மூலம் குழுவில் சேர்க்கவும் அல்லது படிவத்தை அழிக்கவும்.', 'error');
+          return;
+        }
+        await confirmGroupBatch();
+        return;
+      }
       const formAmount = Math.round(Number(document.getElementById('amount').value) || 0);
       const cashCounted = DENOMINATIONS.reduce((total, value) => total + (denominationCounts[value] || 0) * value, 0);
 
@@ -1723,154 +1723,99 @@
       }
     }
 
-    // =========================================================================
-    // Group Mode: one person hands over cash collected from several families. Staff just reuse the
-    // normal form above — fill one family's full details + their Amount, press Ctrl+S to add them to
-    // the batch (same create/autofill-existing logic as a normal save), then the form clears for the
-    // next person. Once everyone is entered, count the total cash in the Denomination Tally and press
-    // Ctrl+Enter to post every person's contribution at once and print one combined receipt.
-    // =========================================================================
-    function toggleGroupMode() {
-      if (groupModeActive) {
-        if (groupBatch.length > 0) {
-          showGlobalAlert('குழுவில் பதிவுகள் உள்ளன. "முடி" அல்லது "ரத்து" பொத்தானைப் பயன்படுத்தவும்.', 'error');
-          return;
-        }
-        exitGroupMode();
-      } else {
-        enterGroupMode();
-      }
-    }
-
-    function enterGroupMode() {
-      const eventId = document.getElementById('eventSelect').value;
-      if (!eventId) {
-        showGlobalAlert('முதலில் நிகழ்வைத் தேர்ந்தெடுக்கவும் (Ctrl+E).', 'error');
-        return;
-      }
-      const receiverId = getSelectedReceiverId();
-      if (!receiverId) {
-        showGlobalAlert('முதலில் பெறுநரைத் தேர்ந்தெடுக்கவும் (Ctrl+E).', 'error');
-        return;
-      }
-
-      groupModeActive = true;
-      groupBatch = [];
-      document.getElementById('groupHandedOverBy').value = '';
-      updateGroupModeBanner();
-      document.getElementById('groupModeBanner').classList.remove('hidden');
-      cancelEdit();
-      zeroOutDenominations();
-      showGlobalAlert('குழு பயன்முறை இயக்கப்பட்டது. ஒவ்வொரு நபரையும் படிவத்தில் நிரப்பி, தொகை உள்ளிட்டு Tab அழுத்தவும்.', 'success');
-      document.getElementById('phoneNumber').focus();
-    }
-
-    function exitGroupMode() {
-      groupModeActive = false;
-      groupBatch = [];
-      document.getElementById('groupModeBanner').classList.add('hidden');
-      cancelEdit();
-    }
-
-    function updateGroupModeBanner() {
+    function updateGroupBatchPanel() {
       const total = groupBatch.reduce((sum, entry) => sum + entry.amount, 0);
       document.getElementById('groupBatchCount').textContent = groupBatch.length;
       document.getElementById('groupBatchTotal').textContent = formatRupees(total);
-      document.getElementById('groupBatchList').innerHTML = groupBatch.length
-        ? groupBatch.map((entry, index) => `
-            <div class="flex items-center justify-between gap-2">
-              <span>${index + 1}. ${escapeHtml(entry.name)} (${escapeHtml(entry.phone)})</span>
-              <span class="flex items-center gap-2">
-                <strong>${formatRupees(entry.amount)}</strong>
-                <button type="button" onclick="removeFromGroupBatch(${index})" class="text-red-500 hover:text-red-700" title="அகற்று">✕</button>
-              </span>
-            </div>`).join('')
-        : '<p class="text-violet-400">இன்னும் யாரும் சேர்க்கப்படவில்லை.</p>';
+      document.getElementById('groupBatchList').innerHTML = groupBatch.map((entry, index) => `
+        <div class="flex items-center justify-between gap-2">
+          <span class="truncate">${index + 1}. ${escapeHtml(entry.name)} (${escapeHtml(entry.phone)})</span>
+          <span class="inline-flex items-center gap-2 shrink-0">
+            <strong>${formatRupees(entry.amount)}</strong>
+            <button type="button" onclick="removeFromGroupBatch(${index})" class="text-red-600 hover:text-red-700" title="Remove contribution">✕</button>
+          </span>
+        </div>`).join('');
+      document.getElementById('groupBatchFooter').classList.toggle('hidden', groupBatch.length === 0);
       recalculateTally();
     }
 
     function removeFromGroupBatch(index) {
       groupBatch.splice(index, 1);
-      updateGroupModeBanner();
+      updateGroupBatchPanel();
     }
 
-    // Called from handleFormSubmit() instead of createUser()/updateUser() while Group Mode is active.
-    // Resolves (or creates) the contributor exactly like a normal save, then adds them + the Amount
-    // field's value to the batch and clears the form — ready for the next person straight away.
-    async function addPersonToGroupBatch(payload) {
-      const amount = Math.round(Number(document.getElementById('amount').value) || 0);
-      if (amount <= 0) {
-        showFormFeedback('தொகையை நிரப்பவும்.', false);
-        showGlobalAlert('தொகையை நிரப்பவும்.', 'error');
+    function addCurrentContributorToGroup() {
+      const eventId = document.getElementById('eventSelect').value;
+      const receiverId = getSelectedReceiverId();
+      if (!eventId || !receiverId) {
+        showGlobalAlert('குழுவில் சேர்ப்பதற்கு முன் நிகழ்வு மற்றும் பெறுநரைத் தேர்ந்தெடுக்கவும் (Ctrl+E).', 'error');
+        return;
+      }
+      if (groupBatch.length && (groupEventId !== eventId || groupReceiverId !== receiverId)) {
+        showGlobalAlert('குழுவில் ஏற்கனவே சேர்த்த நிகழ்வு அல்லது பெறுநரை மாற்ற முடியாது. முதலில் குழுவை முடிக்கவும்.', 'error');
         return;
       }
 
-      const receiverId = getSelectedReceiverId();
-      const userId = document.getElementById('userId').value;
-      const isExisting = isEditMode && userId;
-
-      setSubmitLoading(true, 'சேர்க்கிறது...');
-      try {
-        let contributorId;
-        if (isExisting) {
-          contributorId = Number(userId);
-          if (groupBatch.some(entry => entry.contributorId === contributorId)) {
-            showGlobalAlert('இந்த நபர் ஏற்கனவே குழுவில் சேர்க்கப்பட்டுள்ளார்.', 'error');
-            return;
-          }
-        } else {
-          const serialNumberValue = Number(document.getElementById('serialNumber').value);
-          const response = await authFetch(`${BASE_URL}/users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null }),
-          });
-          if (!response.ok) {
-            const errJson = await response.json().catch(() => ({}));
-            throw new Error(errJson.detail || `Server returned ${response.status}`);
-          }
-          const created = await response.json();
-          contributorId = created.id;
-        }
-
-        if (contributorId === receiverId) {
-          showGlobalAlert('கொடுப்பவரும் பெறுபவரும் ஒரே குடும்பமாக இருக்க முடியாது.', 'error');
-          return;
-        }
-
-        groupBatch.push({
-          contributorId,
-          name: payload.husband_name,
-          phone: payload.phone_number,
-          place: payload.native_place,
-          wife: payload.wife_name,
-          amount,
-          serialNumber: document.getElementById('serialNumber').value || '—',
-        });
-        updateGroupModeBanner();
-        showGlobalAlert(`"${payload.husband_name}" குழுவில் சேர்க்கப்பட்டது (${formatRupees(amount)}). அடுத்த நபரை நிரப்பவும்.`, 'success');
-        cancelEdit();
-        document.getElementById('phoneNumber').focus();
-      } catch (error) {
-        showGlobalAlert(`சேர்க்க முடியவில்லை: ${error.message}`, 'error');
-      } finally {
-        setSubmitLoading(false);
+      const payload = buildUserPayloadFromForm();
+      if (!payload) {
+        showFormFeedback('போன் எண் மற்றும் கணவர் பெயரை நிரப்பவும்.', false);
+        return;
       }
+
+      const amount = Math.round(Number(document.getElementById('amount').value) || 0);
+      if (amount <= 0) {
+        showGlobalAlert('குழுவில் சேர்க்கும் முன் தொகையை உள்ளிடவும்.', 'error');
+        return;
+      }
+
+      const userId = document.getElementById('userId').value;
+      const contributorId = isEditMode && userId ? Number(userId) : null;
+      const receiver = currentUsersList.find(user => user.id === receiverId);
+      if (contributorId === receiverId || (!contributorId && receiver?.phone_number === payload.phone_number)) {
+        showGlobalAlert('கொடுப்பவரும் பெறுபவரும் ஒரே குடும்பமாக இருக்க முடியாது.', 'error');
+        return;
+      }
+
+      const duplicate = groupBatch.some(entry => contributorId
+        ? entry.contributorId === contributorId
+        : entry.phone === payload.phone_number);
+      if (duplicate) {
+        showGlobalAlert('இந்த நபர் ஏற்கனவே குழுவில் சேர்க்கப்பட்டுள்ளார்.', 'error');
+        return;
+      }
+
+      const currentSerial = Number(document.getElementById('serialNumber').value);
+      const queuedNewUsers = groupBatch.filter(entry => !entry.contributorId).length;
+      const serialNumber = Number.isFinite(currentSerial) && currentSerial > 0 ? currentSerial + queuedNewUsers : null;
+      if (groupBatch.length === 0) {
+        groupEventId = eventId;
+        groupReceiverId = receiverId;
+      }
+      groupBatch.push({
+        contributorId,
+        userPayload: contributorId ? null : payload,
+        name: payload.husband_name,
+        phone: payload.phone_number,
+        place: payload.native_place,
+        wife: payload.wife_name,
+        amount,
+        serialNumber: serialNumber || '—',
+      });
+      updateGroupBatchPanel();
+      showGlobalAlert(`"${payload.husband_name}" குழுவில் சேர்க்கப்பட்டார் (${formatRupees(amount)}).`, 'success');
+      cancelEdit();
+      document.getElementById('phoneNumber').focus();
     }
 
     async function confirmGroupBatch() {
       if (groupBatch.length === 0) {
-        showGlobalAlert('குறைந்தது ஒரு நபரையாவது குழுவில் சேர்க்கவும் (Ctrl+S).', 'error');
+        showGlobalAlert('குறைந்தது ஒருவரையாவது Ctrl+G மூலம் குழுவில் சேர்க்கவும்.', 'error');
         return;
       }
       const eventId = document.getElementById('eventSelect').value;
-      if (!eventId) {
-        showGlobalAlert('நிகழ்வைத் தேர்ந்தெடுக்கவும்.', 'error');
-        return;
-      }
       const receiverId = getSelectedReceiverId();
-      if (!receiverId) {
-        showGlobalAlert('பெறுநரைத் தேர்ந்தெடுக்கவும்.', 'error');
+      if (eventId !== groupEventId || receiverId !== groupReceiverId) {
+        showGlobalAlert('குழுவில் சேர்த்த நிகழ்வு அல்லது பெறுநர் மாறியுள்ளது. சரியான தேர்வை மீட்டமைக்கவும்.', 'error');
         return;
       }
 
@@ -1882,8 +1827,31 @@
       }
 
       try {
-        for (let i = 0; i < groupBatch.length; i++) {
-          const entry = groupBatch[i];
+        let denominationsRecorded = groupBatch.some(entry => entry.denominationsRecorded);
+        for (const entry of groupBatch) {
+          if (!entry.contributorId) {
+            const response = await authFetch(`${BASE_URL}/users`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                ...entry.userPayload,
+                serial_number: entry.serialNumber === '—' ? null : entry.serialNumber,
+              }),
+            });
+            if (!response.ok) {
+              const errJson = await response.json().catch(() => ({}));
+              throw new Error(`${entry.name}: ${errJson.detail || response.status}`);
+            }
+            const created = await response.json();
+            entry.contributorId = created.id;
+          }
+
+          if (entry.contributorId === receiverId) {
+            throw new Error(`${entry.name}: கொடுப்பவரும் பெறுபவரும் ஒரே குடும்பமாக இருக்க முடியாது.`);
+          }
+
+          if (entry.posted) continue;
+          const includeDenominations = !denominationsRecorded;
           const response = await authFetch(`${BASE_URL}/contributions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -1892,27 +1860,26 @@
               receiver_id: receiverId,
               event_id: Number(eventId),
               amount: entry.amount,
-              // Full note breakdown is attached to just the first entry; the event-level summary sums
-              // across all transactions in the event, so the aggregate total still comes out correct.
-              denominations: i === 0 ? denominationCounts : undefined,
+              denominations: includeDenominations ? denominationCounts : undefined,
             }),
           });
           if (!response.ok) {
             const errJson = await response.json().catch(() => ({}));
             throw new Error(`${entry.name}: ${errJson.detail || response.status}`);
           }
+          entry.posted = true;
+          entry.denominationsRecorded = includeDenominations;
+          denominationsRecorded = denominationsRecorded || includeDenominations;
         }
 
         const selectedEventForReceipt = currentEventsList.find(event => String(event.event_id) === eventId);
         const receiverForReceipt = currentUsersList.find(user => user.id === receiverId);
-        const handedOverBy = document.getElementById('groupHandedOverBy').value.trim();
 
         recordAndPrintReceipt({
           isGroup: true,
           eventName: selectedEventForReceipt?.event_name || '—',
           eventDate: selectedEventForReceipt?.event_date || '—',
           hostName: receiverForReceipt ? `${receiverForReceipt.husband_name}${receiverForReceipt.phone_number ? ' | ' + receiverForReceipt.phone_number : ''}` : '—',
-          handedOverBy: handedOverBy || '—',
           contributors: groupBatch.map(entry => ({ name: entry.name, phone: entry.phone, place: entry.place, wife: entry.wife, amount: formatRupees(entry.amount), serialNumber: entry.serialNumber })),
           totalAmount: formatRupees(totalAmount),
           denominations: DENOMINATIONS.filter(value => denominationCounts[value] > 0).map(value => ({ value, count: denominationCounts[value] })),
@@ -1926,7 +1893,10 @@
         });
 
         showGlobalAlert(`குழு பங்களிப்பு பதிவு செய்யப்பட்டது: ${formatRupees(totalAmount)}`, 'success');
-        exitGroupMode();
+        groupBatch = [];
+        groupEventId = null;
+        groupReceiverId = null;
+        updateGroupBatchPanel();
         zeroOutDenominations();
         await loadEvents(Number(eventId));
         refreshMyCollectionsIfOpen();
@@ -1938,23 +1908,8 @@
     }
 
     // Tab in the Amount field jumps straight to the denomination tally instead of going to Notes.
-    // In Group Mode (with an amount entered) Tab instead adds this person to the batch and returns to Phone.
     function handleAmountKeydown(event) {
       if (event.key !== 'Tab' || event.shiftKey) return;
-
-      const amountValue = Math.round(Number(document.getElementById('amount').value) || 0);
-      if (groupModeActive && amountValue > 0) {
-        event.preventDefault();
-        if (document.getElementById('submitBtn').disabled) return;
-        const payload = buildUserPayloadFromForm();
-        if (!payload) {
-          showFormFeedback('கட்டாய அனைத்து பகுதிகளையும் நிரப்பவும் (*)', false);
-          return;
-        }
-        addPersonToGroupBatch(payload);
-        return;
-      }
-
       event.preventDefault();
       focusFirstDenominationInput();
     }
@@ -2017,8 +1972,7 @@
         document.getElementById('amount').value = amount;
         recalculateTally();
         // Deferred so it wins over the focus move that triggered this blur.
-        // Group Mode counts notes only at the end, so it stays on Amount (Tab then adds the person).
-        setTimeout(groupModeActive ? focusAmountInput : focusFirstDenominationInput, 0);
+        setTimeout(focusFirstDenominationInput, 0);
       } else {
         setTimeout(focusAmountInput, 0);
       }
@@ -2873,11 +2827,6 @@
       const payload = buildUserPayloadFromForm();
       if (!payload) {
         showFormFeedback('கட்டாய அனைத்து பகுதிகளையும் நிரப்பவும் (*)', false);
-        return;
-      }
-
-      if (groupModeActive) {
-        addPersonToGroupBatch(payload);
         return;
       }
 
