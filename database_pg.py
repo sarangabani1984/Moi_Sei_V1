@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 from decimal import Decimal
 
@@ -92,7 +93,8 @@ def list_staff_accounts() -> list[dict]:
 def get_staff_collections(staff_id: int, event_id: int | None = None) -> list[dict]:
     """Contributions personally recorded by this staff login (optionally scoped to one event)."""
     query = """
-        SELECT je.transaction_id, je.amount, je.event_id, u.husband_name AS contributor_name,
+        SELECT je.transaction_id, je.amount, je.event_id, u.id AS user_id,
+               u.husband_name AS contributor_name,
                u.phone_number AS contributor_phone, tc.collected_at
         FROM transaction_collectors tc
         JOIN journal_entries je ON je.transaction_id = tc.transaction_id AND je.entry_type = 'CONTRIBUTED'
@@ -212,6 +214,19 @@ def get_next_serial_number(event_id: int | None = None) -> int:
     return int(row["next_number"])
 
 
+def get_event_serial_status(event_id: int, contributor_id: int | None = None) -> dict:
+    """The next number is a preview; a family's saved event serial is stable."""
+    row = _one(
+        """
+        SELECT COUNT(*) AS collected_family_count,
+               MAX(CASE WHEN user_id = %s THEN serial_number END) AS serial_number
+        FROM event_contributor_serials WHERE event_id = %s
+        """, (contributor_id, event_id),
+    )
+    count = int(row["collected_family_count"])
+    return {"collected_family_count": count, "next_serial_number": count + 1, "serial_number": row["serial_number"]}
+
+
 def get_users(search: str | None = None) -> list[dict]:
     if search:
         pattern = f"%{search}%"
@@ -245,19 +260,64 @@ def update_user(
     initial: str | None,
     notes: str | None,
     is_thaimama: bool = False,
+    changed_by_staff_id: int | None = None,
 ) -> dict | None:
-    return _one(
-        f"""
-        UPDATE users
-        SET husband_name = %s, wife_name = %s, husband_job = %s, phone_number = %s,
-            native_place = %s, current_place = %s, wife_job = %s,
-            others = %s, initial = %s, notes = %s, is_thaimama = %s, updated_at = now()
-        WHERE id = %s
-        RETURNING {USER_COLUMNS}
-        """,
-        (husband_name, wife_name, husband_job, phone_number, native_place, current_place,
-         wife_job, others, initial, notes, is_thaimama, user_id),
-    )
+    with get_pool().connection() as connection:
+        before = connection.execute(
+            f"SELECT {USER_COLUMNS} FROM users WHERE id = %s FOR UPDATE", (user_id,)
+        ).fetchone()
+        if before is None:
+            return None
+        after = connection.execute(
+            f"""
+            UPDATE users
+            SET husband_name = %s, wife_name = %s, husband_job = %s, phone_number = %s,
+                native_place = %s, current_place = %s, wife_job = %s,
+                others = %s, initial = %s, notes = %s, is_thaimama = %s, updated_at = now()
+            WHERE id = %s
+            RETURNING {USER_COLUMNS}
+            """,
+            (husband_name, wife_name, husband_job, phone_number, native_place, current_place,
+             wife_job, others, initial, notes, is_thaimama, user_id),
+        ).fetchone()
+        if after is None:
+            raise RuntimeError("Updated user could not be read back.")
+        before = {key: value for key, value in before.items() if key != "password_hash"}
+        after = {key: value for key, value in after.items() if key != "password_hash"}
+        editable_fields = (
+            "husband_name", "wife_name", "husband_job", "phone_number", "native_place",
+            "current_place", "wife_job", "others", "initial", "notes", "is_thaimama",
+        )
+        if changed_by_staff_id is not None and any(before[field] != after[field] for field in editable_fields):
+            connection.execute(
+                """
+                INSERT INTO user_change_history(user_id, changed_by_staff_id, before_json, after_json)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (user_id, changed_by_staff_id,
+                 json.dumps(before, ensure_ascii=False, default=str),
+                 json.dumps(after, ensure_ascii=False, default=str)),
+            )
+        return after
+
+
+def get_user_change_history(search: str | None = None) -> list[dict]:
+    """Return recent profile changes in the same shape as the SQL Server backend."""
+    query = """
+        SELECT h.history_id, h.user_id, u.husband_name, u.phone_number,
+               s.display_name AS changed_by, h.changed_at, h.before_json, h.after_json
+        FROM user_change_history h
+        JOIN users u ON u.id = h.user_id
+        JOIN staff_accounts s ON s.staff_id = h.changed_by_staff_id
+    """
+    params = None
+    if search:
+        query += """
+            WHERE u.husband_name ILIKE %s OR u.wife_name ILIKE %s OR u.phone_number ILIKE %s
+               OR h.before_json ILIKE %s OR h.after_json ILIKE %s
+        """
+        params = [f"%{search}%"] * 5
+    return _all(query + " ORDER BY h.changed_at DESC, h.history_id DESC LIMIT 200", params)
 
 
 # ----------------------------------------------------------------------------
@@ -277,6 +337,66 @@ def get_active_events() -> list[dict]:
         ORDER BY event_date DESC, event_id DESC
         """
     )
+
+
+def get_assigned_active_events(staff_id: int) -> list[dict]:
+    """List only active events assigned to this counter."""
+    columns = ", ".join(f"e.{column.strip()}" for column in EVENT_COLUMNS.split(","))
+    return _all(
+        f"""
+        SELECT {columns}
+        FROM event e
+        JOIN event_counter_assignments a ON a.event_id = e.event_id
+        WHERE e.is_active AND a.staff_id = %s
+        ORDER BY e.event_date DESC, e.event_id DESC
+        """,
+        (staff_id,),
+    )
+
+
+def get_event_counter_assignments(event_id: int) -> dict:
+    with get_pool().connection() as connection:
+        counters = connection.execute(
+            "SELECT staff_id, display_name FROM staff_accounts WHERE role = 'counter' AND is_active ORDER BY display_name"
+        ).fetchall()
+        assigned = connection.execute(
+            "SELECT staff_id FROM event_counter_assignments WHERE event_id = %s", (event_id,)
+        ).fetchall()
+    return {"counters": counters, "assigned_counter_ids": [row["staff_id"] for row in assigned]}
+
+
+def replace_event_counter_assignments(event_id: int, counter_ids: list[int], assigned_by: int) -> None:
+    """Validate and replace assignments atomically; serialize edits to the same event."""
+    with get_pool().connection() as connection:
+        event = connection.execute(
+            "SELECT event_id FROM event WHERE event_id = %s AND is_active FOR UPDATE", (event_id,)
+        ).fetchone()
+        if event is None:
+            raise ValueError("Active event not found.")
+        if counter_ids:
+            valid = connection.execute(
+                "SELECT COUNT(*) AS counter_count FROM staff_accounts WHERE role = 'counter' AND is_active AND staff_id = ANY(%s)",
+                (counter_ids,),
+            ).fetchone()
+            if valid["counter_count"] != len(counter_ids):
+                raise ValueError("One or more selected counters are inactive or invalid.")
+        connection.execute("DELETE FROM event_counter_assignments WHERE event_id = %s", (event_id,))
+        for counter_id in counter_ids:
+            connection.execute(
+                "INSERT INTO event_counter_assignments(event_id, staff_id, assigned_by) VALUES (%s, %s, %s)",
+                (event_id, counter_id, assigned_by),
+            )
+
+
+def is_event_assigned_to_staff(event_id: int, staff_id: int) -> bool:
+    return _one(
+        """
+        SELECT 1 FROM event_counter_assignments a
+        JOIN event e ON e.event_id = a.event_id
+        WHERE a.event_id = %s AND a.staff_id = %s AND e.is_active
+        """,
+        (event_id, staff_id),
+    ) is not None
 
 
 def create_event(
@@ -311,6 +431,41 @@ def get_event_contributors(event_id: int) -> list[dict]:
     )
 
 
+def get_event_transactions(event_id: int) -> list[dict]:
+    """Return contribution details for the admin's event report."""
+    return _all(
+        """
+        SELECT u.husband_name, u.wife_name, u.native_place, u.phone_number, je.amount
+        FROM journal_entries je
+        JOIN users u ON u.id = je.user_id
+        WHERE je.event_id = %s AND je.entry_type = 'CONTRIBUTED'
+        ORDER BY je.transaction_id
+        """,
+        (event_id,),
+    )
+
+
+def get_transaction_denomination_details(event_id: int, transaction_id: int) -> dict | None:
+    rows = _all(
+        """
+        SELECT je.event_id, tc.staff_id, td.denomination, td.note_count
+        FROM journal_entries je
+        LEFT JOIN transaction_collectors tc ON tc.transaction_id = je.transaction_id
+        LEFT JOIN transaction_denominations td ON td.transaction_id = je.transaction_id
+        WHERE je.event_id = %s AND je.transaction_id = %s AND je.entry_type = 'CONTRIBUTED'
+        ORDER BY td.denomination DESC NULLS LAST
+        """,
+        (event_id, transaction_id),
+    )
+    if not rows:
+        return None
+    return {
+        "event_id": rows[0]["event_id"],
+        "staff_id": rows[0]["staff_id"],
+        "denominations": {row["denomination"]: row["note_count"] for row in rows if row["denomination"] is not None},
+    }
+
+
 def process_contribution(
     contributor_id: int,
     receiver_id: int,
@@ -318,15 +473,35 @@ def process_contribution(
     amount: float,
     denominations: dict[int, int] | None = None,
     staff_id: int | None = None,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, int | None, int | None]:
     """Record one double-entry contribution via process_contribution(), plus the optional note breakdown and
     collecting staff member, all in one database transaction."""
     try:
         with get_pool().connection() as connection:
+            event = connection.execute(
+                "SELECT event_id FROM event WHERE event_id = %s AND is_active FOR UPDATE", (event_id,)
+            ).fetchone()
+            if not event:
+                return False, "Event ID does not exist or is inactive.", None, None
             transaction_id = connection.execute(
                 "SELECT process_contribution(%s::integer, %s::integer, %s::integer, %s::numeric) AS transaction_id",
                 (contributor_id, receiver_id, event_id, Decimal(str(amount))),
             ).fetchone()["transaction_id"]
+            existing = connection.execute(
+                "SELECT serial_number FROM event_contributor_serials WHERE event_id = %s AND user_id = %s",
+                (event_id, contributor_id),
+            ).fetchone()
+            if existing:
+                serial_number = existing["serial_number"]
+            else:
+                serial_number = connection.execute(
+                    "SELECT COALESCE(MAX(serial_number), 0) + 1 AS next_number FROM event_contributor_serials WHERE event_id = %s",
+                    (event_id,),
+                ).fetchone()["next_number"]
+                connection.execute(
+                    "INSERT INTO event_contributor_serials (event_id, user_id, serial_number) VALUES (%s, %s, %s)",
+                    (event_id, contributor_id, serial_number),
+                )
 
             for denomination, note_count in (denominations or {}).items():
                 if note_count and note_count > 0:
@@ -340,9 +515,9 @@ def process_contribution(
                     "INSERT INTO transaction_collectors (transaction_id, staff_id) VALUES (%s, %s)",
                     (transaction_id, staff_id),
                 )
-        return True, "Contribution recorded successfully."
+        return True, "Contribution recorded successfully.", serial_number, transaction_id
     except PsycopgError as error:
-        return False, _error_message(error)
+        return False, _error_message(error), None, None
 
 
 def get_event_denomination_summary(event_id: int) -> dict:

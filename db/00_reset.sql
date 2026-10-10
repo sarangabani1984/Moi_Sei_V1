@@ -2,6 +2,9 @@
 drop function if exists process_contribution(integer, integer, integer, numeric);
 drop table if exists transaction_collectors cascade;
 drop table if exists transaction_denominations cascade;
+drop table if exists event_contributor_serials cascade;
+drop table if exists user_change_history cascade;
+drop table if exists event_counter_assignments cascade;
 drop table if exists journal_entries cascade;
 drop table if exists transactions cascade;
 drop table if exists event cascade;

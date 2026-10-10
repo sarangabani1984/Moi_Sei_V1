@@ -40,3 +40,7 @@ begin
     insert into transaction_collectors (transaction_id, staff_id) values (v_tx, 3);
 end;
 $$;
+
+-- These are event/family numbers, not the family's general record number.
+insert into event_contributor_serials (event_id, user_id, serial_number)
+values (1, 2, 1), (1, 3, 2), (1, 4, 3);

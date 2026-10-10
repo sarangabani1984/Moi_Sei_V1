@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 
 import pyodbc
@@ -92,7 +93,8 @@ def get_staff_collections(staff_id: int, event_id: int | None = None) -> list[di
     cursor = connection.cursor()
     try:
         query = """
-            SELECT je.transaction_id, je.amount, je.event_id, u.husband_name AS contributor_name,
+                 SELECT je.transaction_id, je.amount, je.event_id, u.id AS user_id,
+                     u.husband_name AS contributor_name,
                    u.phone_number AS contributor_phone, tc.collected_at
             FROM dbo.transaction_collectors tc
             JOIN dbo.journal_entries je ON je.transaction_id = tc.transaction_id AND je.entry_type = 'CONTRIBUTED'
@@ -196,7 +198,7 @@ def create_user(
     cursor = connection.cursor()
     try:
         if serial_number is not None:
-            # Explicit event-scoped serial number: bypass the UsersSerialNumberSequence default for this insert only.
+            # Legacy family-record number, distinct from the serial assigned to an event contribution.
             cursor.execute(
                 """
                      INSERT INTO dbo.Users (
@@ -289,6 +291,23 @@ def get_next_serial_number(event_id: int | None = None) -> int:
         connection.close()
 
 
+def get_event_serial_status(event_id: int, contributor_id: int | None = None) -> dict:
+    """The next number is a preview; a family's saved event serial is stable."""
+    connection = get_connection()
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            SELECT COUNT(*), MAX(CASE WHEN user_id = ? THEN serial_number END)
+            FROM dbo.event_contributor_serials WHERE event_id = ?
+            """, contributor_id, event_id,
+        )
+        count, serial_number = cursor.fetchone()
+        return {"collected_family_count": count, "next_serial_number": count + 1, "serial_number": serial_number}
+    finally:
+        connection.close()
+
+
 def get_users(search: str | None = None) -> list[dict]:
     connection = get_connection()
     cursor = connection.cursor()
@@ -334,10 +353,16 @@ def update_user(
     initial: str | None,
     notes: str | None,
     is_thaimama: bool = False,
+    changed_by_staff_id: int | None = None,
 ) -> dict | None:
     connection = get_connection()
     cursor = connection.cursor()
     try:
+        before_snapshot = _get_user_change_snapshot(cursor, user_id)
+        if before_snapshot is None:
+            connection.rollback()
+            return None
+
         cursor.execute(
             """
             UPDATE dbo.Users
@@ -363,21 +388,70 @@ def update_user(
             connection.rollback()
             return None
 
-        cursor.execute(
-            """
-            SELECT {USER_COLUMNS}
-            FROM dbo.Users
-            WHERE id = ?
-            """.format(USER_COLUMNS=USER_COLUMNS),
-            user_id,
+        after_snapshot = _get_user_change_snapshot(cursor, user_id)
+        if after_snapshot is None:
+            raise RuntimeError("Updated user could not be read back.")
+
+        editable_fields = (
+            "husband_name", "wife_name", "husband_job", "phone_number", "native_place",
+            "current_place", "wife_job", "others", "initial", "notes", "is_thaimama",
         )
-        row = cursor.fetchone()
+        if changed_by_staff_id is not None and any(before_snapshot[field] != after_snapshot[field] for field in editable_fields):
+            cursor.execute(
+                """
+                INSERT INTO dbo.user_change_history (user_id, changed_by_staff_id, before_json, after_json)
+                VALUES (?, ?, ?, ?)
+                """,
+                user_id,
+                changed_by_staff_id,
+                json.dumps(before_snapshot, ensure_ascii=False, default=str),
+                json.dumps(after_snapshot, ensure_ascii=False, default=str),
+            )
         connection.commit()
-        columns = [column[0] for column in cursor.description]
-        return dict(zip(columns, row))
+        return after_snapshot
     except Exception:
         connection.rollback()
         raise
+    finally:
+        connection.close()
+
+
+def _get_user_change_snapshot(cursor, user_id: int) -> dict | None:
+    cursor.execute(
+        "SELECT {USER_COLUMNS} FROM dbo.Users WHERE id = ?".format(USER_COLUMNS=USER_COLUMNS),
+        user_id,
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    columns = [column[0] for column in cursor.description]
+    return {column: value for column, value in zip(columns, row) if column != "password_hash"}
+
+
+def get_user_change_history(search: str | None = None) -> list[dict]:
+    """Return recent user profile changes for the Admin history view."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        query = """
+            SELECT TOP 200 h.history_id, h.user_id, u.husband_name, u.phone_number,
+                   s.display_name AS changed_by, h.changed_at, h.before_json, h.after_json
+            FROM dbo.user_change_history h
+            JOIN dbo.Users u ON u.id = h.user_id
+            JOIN dbo.staff_accounts s ON s.staff_id = h.changed_by_staff_id
+        """
+        params: list[str] = []
+        if search:
+            query += """
+            WHERE u.husband_name LIKE ? OR u.wife_name LIKE ? OR u.phone_number LIKE ?
+               OR h.before_json LIKE ? OR h.after_json LIKE ?
+            """
+            pattern = f"%{search}%"
+            params.extend([pattern] * 5)
+        query += " ORDER BY h.changed_at DESC, h.history_id DESC"
+        cursor.execute(query, *params)
+        columns = [column[0] for column in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
     finally:
         connection.close()
 
@@ -400,6 +474,100 @@ def get_active_events() -> list[dict]:
         )
         columns = [column[0] for column in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+
+def get_assigned_active_events(staff_id: int) -> list[dict]:
+    """List active events assigned to one counter."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            f"""
+            SELECT {', '.join(f'e.{column.strip()}' for column in EVENT_COLUMNS.split(','))}
+            FROM dbo.event e
+            JOIN dbo.event_counter_assignments a ON a.event_id = e.event_id
+            WHERE e.is_active = 1 AND a.staff_id = ?
+            ORDER BY e.event_date DESC, e.event_id DESC
+            """,
+            staff_id,
+        )
+        columns = [column[0] for column in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+
+def get_event_counter_assignments(event_id: int) -> dict:
+    """Return active counter accounts and their assignment state for one event."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "SELECT staff_id, display_name FROM dbo.staff_accounts WHERE role = 'counter' AND is_active = 1 ORDER BY display_name"
+        )
+        counters = [{"staff_id": row[0], "display_name": row[1]} for row in cursor.fetchall()]
+        cursor.execute(
+            "SELECT staff_id FROM dbo.event_counter_assignments WHERE event_id = ?",
+            event_id,
+        )
+        assigned_counter_ids = [row[0] for row in cursor.fetchall()]
+        return {"counters": counters, "assigned_counter_ids": assigned_counter_ids}
+    finally:
+        connection.close()
+
+
+def replace_event_counter_assignments(event_id: int, counter_ids: list[int], assigned_by: int) -> None:
+    """Replace the counter assignment set for one event atomically."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT 1 FROM dbo.event WHERE event_id = ? AND is_active = 1", event_id)
+        if not cursor.fetchone():
+            raise ValueError("Active event not found.")
+
+        if counter_ids:
+            placeholders = ",".join("?" for _ in counter_ids)
+            cursor.execute(
+                f"SELECT COUNT(*) FROM dbo.staff_accounts WHERE role = 'counter' AND is_active = 1 AND staff_id IN ({placeholders})",
+                *counter_ids,
+            )
+            if cursor.fetchone()[0] != len(counter_ids):
+                raise ValueError("One or more selected counters are inactive or invalid.")
+
+        cursor.execute("DELETE FROM dbo.event_counter_assignments WHERE event_id = ?", event_id)
+        for counter_id in counter_ids:
+            cursor.execute(
+                "INSERT INTO dbo.event_counter_assignments (event_id, staff_id, assigned_by) VALUES (?, ?, ?)",
+                event_id,
+                counter_id,
+                assigned_by,
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def is_event_assigned_to_staff(event_id: int, staff_id: int) -> bool:
+    """Check that a counter has been assigned to an active event."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT 1
+            FROM dbo.event_counter_assignments a
+            JOIN dbo.event e ON e.event_id = a.event_id
+            WHERE a.event_id = ? AND a.staff_id = ? AND e.is_active = 1
+            """,
+            event_id,
+            staff_id,
+        )
+        return cursor.fetchone() is not None
     finally:
         connection.close()
 
@@ -458,6 +626,60 @@ def get_event_contributors(event_id: int) -> list[dict]:
         connection.close()
 
 
+def get_event_transactions(event_id: int) -> list[dict]:
+    """Return each contribution for an event with the contributor's requested report details."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+                 SELECT contributor.husband_name AS husband_name,
+                     contributor.wife_name AS wife_name,
+                     contributor.native_place,
+                     contributor.phone_number,
+                     je.amount
+            FROM dbo.journal_entries je
+            JOIN dbo.Users contributor ON contributor.id = je.user_id
+            WHERE je.event_id = ? AND je.entry_type = 'CONTRIBUTED'
+                 ORDER BY je.transaction_id
+            """,
+            event_id,
+        )
+        columns = [column[0] for column in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+
+def get_transaction_denomination_details(event_id: int, transaction_id: int) -> dict | None:
+    """Return saved note counts and collector ownership for one contribution transaction."""
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT je.event_id, tc.staff_id, td.denomination, td.note_count
+            FROM dbo.journal_entries je
+            LEFT JOIN dbo.transaction_collectors tc ON tc.transaction_id = je.transaction_id
+            LEFT JOIN dbo.transaction_denominations td ON td.transaction_id = je.transaction_id
+            WHERE je.event_id = ? AND je.transaction_id = ? AND je.entry_type = 'CONTRIBUTED'
+            ORDER BY td.denomination DESC
+            """,
+            event_id,
+            transaction_id,
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            return None
+        return {
+            "event_id": rows[0][0],
+            "staff_id": rows[0][1],
+            "denominations": {row[2]: row[3] for row in rows if row[2] is not None},
+        }
+    finally:
+        connection.close()
+
+
 def process_contribution(
     contributor_id: int,
     receiver_id: int,
@@ -465,13 +687,20 @@ def process_contribution(
     amount: float,
     denominations: dict[int, int] | None = None,
     staff_id: int | None = None,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, int | None, int | None]:
     """Record one double-entry contribution via the existing, already-deployed sp_ProcessContribution.
     Optionally also saves the counted cash denomination breakdown (note value -> count), and which
-    logged-in staff member (counter) recorded this contribution, for this contribution."""
+    logged-in staff member recorded it. The event lock also protects the event/family serial allocation."""
     connection = get_connection()
     cursor = connection.cursor()
     try:
+        # Serialize saves for the event until contribution, family serial and cash tags all commit.
+        cursor.execute(
+            "SELECT event_id FROM dbo.event WITH (UPDLOCK, HOLDLOCK) WHERE event_id = ? AND is_active = 1",
+            event_id,
+        )
+        if not cursor.fetchone():
+            raise ValueError("Event ID does not exist or is inactive.")
         cursor.execute(
             "EXEC dbo.sp_ProcessContribution @ContributorId = ?, @ReceiverId = ?, @EventId = ?, @Amount = ?",
             contributor_id,
@@ -479,19 +708,34 @@ def process_contribution(
             event_id,
             amount,
         )
-        transaction_id = None
-        if denominations or staff_id:
+        cursor.execute(
+            """
+            SELECT TOP 1 transaction_id FROM dbo.journal_entries
+            WHERE user_id = ? AND event_id = ? AND entry_type = 'CONTRIBUTED'
+            ORDER BY transaction_id DESC
+            """, contributor_id, event_id,
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise RuntimeError("Contribution did not produce a transaction.")
+        transaction_id = row[0]
+        cursor.execute(
+            "SELECT serial_number FROM dbo.event_contributor_serials WHERE event_id = ? AND user_id = ?",
+            event_id, contributor_id,
+        )
+        existing = cursor.fetchone()
+        if existing:
+            serial_number = existing[0]
+        else:
             cursor.execute(
-                """
-                SELECT TOP 1 transaction_id FROM dbo.journal_entries
-                WHERE user_id = ? AND event_id = ? AND entry_type = 'CONTRIBUTED'
-                ORDER BY transaction_id DESC
-                """,
-                contributor_id,
+                "SELECT ISNULL(MAX(serial_number), 0) + 1 FROM dbo.event_contributor_serials WHERE event_id = ?",
                 event_id,
             )
-            row = cursor.fetchone()
-            transaction_id = row[0] if row else None
+            serial_number = cursor.fetchone()[0]
+            cursor.execute(
+                "INSERT INTO dbo.event_contributor_serials (event_id, user_id, serial_number) VALUES (?, ?, ?)",
+                event_id, contributor_id, serial_number,
+            )
 
         if transaction_id and denominations:
             for denomination, note_count in denominations.items():
@@ -511,10 +755,10 @@ def process_contribution(
             )
 
         connection.commit()
-        return True, "Contribution recorded successfully."
+        return True, "Contribution recorded successfully.", serial_number, transaction_id
     except Exception as error:
         connection.rollback()
-        return False, str(error)
+        return False, str(error), None, None
     finally:
         connection.close()
 

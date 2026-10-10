@@ -19,13 +19,18 @@ create_event = _db.create_event
 create_staff_account = _db.create_staff_account
 create_user = _db.create_user
 get_active_events = _db.get_active_events
+get_assigned_active_events = _db.get_assigned_active_events
 get_event_contributors = _db.get_event_contributors
+get_event_counter_assignments = _db.get_event_counter_assignments
+get_event_transactions = _db.get_event_transactions
+get_transaction_denomination_details = _db.get_transaction_denomination_details
 get_event_denomination_summary = _db.get_event_denomination_summary
 get_family_for_login = _db.get_family_for_login
 get_family_profile = _db.get_family_profile
 get_my_contributions = _db.get_my_contributions
 get_my_receipts = _db.get_my_receipts
 get_next_serial_number = _db.get_next_serial_number
+get_event_serial_status = _db.get_event_serial_status
 get_partner_history = _db.get_partner_history
 get_partner_transactions = _db.get_partner_transactions
 get_staff_by_pin = _db.get_staff_by_pin
@@ -34,7 +39,9 @@ get_staff_collections_summary = _db.get_staff_collections_summary
 get_staff_denomination_summary = _db.get_staff_denomination_summary
 get_users = _db.get_users
 list_staff_accounts = _db.list_staff_accounts
+is_event_assigned_to_staff = _db.is_event_assigned_to_staff
 process_contribution = _db.process_contribution
+replace_event_counter_assignments = _db.replace_event_counter_assignments
 set_family_password_if_unset = _db.set_family_password_if_unset
 update_user = _db.update_user
 verify_password = _db.verify_password
@@ -99,6 +106,11 @@ def require_admin_session(staff: dict = Depends(require_staff_session)) -> dict:
     return staff
 
 
+def require_assigned_event_access(event_id: int, staff: dict) -> None:
+    if staff["role"] == "counter" and not is_event_assigned_to_staff(event_id, staff["staff_id"]):
+        raise HTTPException(status_code=403, detail="This event is not assigned to your counter.")
+
+
 class UserRequest(BaseModel):
     husband_name: str = Field(min_length=1, max_length=150)
     wife_name: str | None = Field(default=None, max_length=150)
@@ -111,7 +123,7 @@ class UserRequest(BaseModel):
     initial: str | None = Field(default=None, max_length=50)
     notes: str | None = Field(default=None, max_length=255)
     is_thaimama: bool = False
-    serial_number: int | None = None  # optional event-scoped number (create only; ignored on update)
+    serial_number: int | None = None  # Legacy family-record number; event serials are assigned on contribution.
 
 
 class UserResponse(UserRequest):
@@ -127,6 +139,8 @@ class UserResponse(UserRequest):
 
 class NextSerialNumberResponse(BaseModel):
     next_serial_number: int
+    collected_family_count: int | None = None
+    serial_number: int | None = None
 
 
 class CreateEventRequest(BaseModel):
@@ -135,6 +149,10 @@ class CreateEventRequest(BaseModel):
     event_place: str | None = Field(default=None, max_length=200)
     event_location: str | None = Field(default=None, max_length=300)
     host_user_id: int | None = None
+
+
+class EventCounterAssignmentsRequest(BaseModel):
+    counter_ids: list[int]
 
 
 class EventResponse(BaseModel):
@@ -186,32 +204,94 @@ def health() -> dict[str, str]:
 
 
 @app.get("/users/next-serial-number", response_model=NextSerialNumberResponse)
-def next_serial_number_endpoint(event_id: int | None = Query(default=None), _: dict = Depends(require_staff_session)) -> dict:
-    """Preview the serial number the next created user will receive (scoped to an event when event_id is given)."""
+def next_serial_number_endpoint(
+    event_id: int | None = Query(default=None),
+    contributor_id: int | None = Query(default=None),
+    staff: dict = Depends(require_staff_session),
+) -> dict:
+    """Preview the shared family count or return a family's already-saved event serial."""
+    if event_id is not None:
+        require_assigned_event_access(event_id, staff)
     try:
+        if event_id is not None:
+            return get_event_serial_status(event_id, contributor_id)
         return {"next_serial_number": get_next_serial_number(event_id)}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Could not compute next serial number: {error}") from error
 
 
 @app.get("/events", response_model=list[EventResponse])
-def list_events_endpoint(_: dict = Depends(require_staff_session)) -> list[dict]:
-    """List active events for the admin event-selection dropdown."""
+def list_events_endpoint(staff: dict = Depends(require_staff_session)) -> list[dict]:
+    """Admins see all active events; counters see only events assigned to them."""
     try:
-        return get_active_events()
+        if staff["role"] == "admin":
+            return get_active_events()
+        return get_assigned_active_events(staff["staff_id"])
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Could not retrieve events: {error}") from error
 
 
+@app.get("/events/{event_id}/counter-assignments")
+def get_event_counter_assignments_endpoint(event_id: int, _: dict = Depends(require_admin_session)) -> dict:
+    """Admin-only assignment state for an event."""
+    try:
+        return get_event_counter_assignments(event_id)
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Could not retrieve counter assignments: {error}") from error
+
+
+@app.put("/events/{event_id}/counter-assignments")
+def replace_event_counter_assignments_endpoint(
+    event_id: int,
+    request: EventCounterAssignmentsRequest,
+    staff: dict = Depends(require_admin_session),
+) -> dict:
+    """Admin-only: choose which counters can work on this event."""
+    if len(request.counter_ids) != len(set(request.counter_ids)):
+        raise HTTPException(status_code=400, detail="Duplicate counter selections are not allowed.")
+    try:
+        replace_event_counter_assignments(event_id, request.counter_ids, staff["staff_id"])
+        return {"success": True, "assigned_counter_ids": request.counter_ids}
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Could not save counter assignments: {error}") from error
+
+
 @app.get("/events/{event_id}/contributors")
-def get_event_contributors_endpoint(event_id: int, _: dict = Depends(require_staff_session)) -> list[dict]:
-    """Families who already contributed to this event (admin sidebar default view)."""
+def get_event_contributors_endpoint(event_id: int, _: dict = Depends(require_admin_session)) -> list[dict]:
+    """Admin-only list of all families who contributed to this event."""
     return get_event_contributors(event_id)
 
 
+@app.get("/events/{event_id}/transactions/{transaction_id}/denominations")
+def get_transaction_denomination_details_endpoint(
+    event_id: int,
+    transaction_id: int,
+    staff: dict = Depends(require_staff_session),
+) -> dict:
+    """Return a transaction's note counts to Admin or to its assigned collecting counter."""
+    require_assigned_event_access(event_id, staff)
+    details = get_transaction_denomination_details(event_id, transaction_id)
+    if details is None:
+        raise HTTPException(status_code=404, detail="Contribution transaction not found.")
+    if staff["role"] == "counter" and details["staff_id"] != staff["staff_id"]:
+        raise HTTPException(status_code=403, detail="You can only view denomination details for your own contributions.")
+    return {"denominations": details["denominations"]}
+
+
+@app.get("/events/{event_id}/transactions")
+def get_event_transactions_endpoint(event_id: int, _: dict = Depends(require_admin_session)) -> list[dict]:
+    """Admin-only transaction details for the selected event's printable report."""
+    try:
+        return get_event_transactions(event_id)
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Could not retrieve event transactions: {error}") from error
+
+
 @app.post("/events", response_model=EventResponse, status_code=201)
-def create_event_endpoint(request: CreateEventRequest, _: dict = Depends(require_staff_session)) -> dict:
-    """Create a new event. Leave host_user_id unset to pick a receiver on the first contribution."""
+def create_event_endpoint(request: CreateEventRequest, _: dict = Depends(require_admin_session)) -> dict:
+    """Admin-only: create an event. Leave host_user_id unset to pick a receiver on the first contribution."""
     try:
         return create_event(
             event_name=request.event_name.strip(),
@@ -227,8 +307,10 @@ def create_event_endpoint(request: CreateEventRequest, _: dict = Depends(require
 @app.post("/contributions")
 def create_contribution_endpoint(request: ContributionRequest, background_tasks: BackgroundTasks, staff: dict = Depends(require_staff_session)) -> dict:
     """Record a double-entry contribution (CONTRIBUTED + RECEIVED journal entries) via sp_ProcessContribution.
-    Tags the contribution with the logged-in staff member so counters can later see only their own collections."""
-    success, message = process_contribution(
+    Saves the event/family serial and collector tags in the same transaction."""
+    require_assigned_event_access(request.event_id, staff)
+
+    success, message, serial_number, transaction_id = process_contribution(
         contributor_id=request.contributor_id,
         receiver_id=request.receiver_id,
         event_id=request.event_id,
@@ -239,12 +321,15 @@ def create_contribution_endpoint(request: ContributionRequest, background_tasks:
     if not success:
         raise HTTPException(status_code=400, detail=message)
     background_tasks.add_task(
-        _send_receipt_message, request.contributor_id, request.receiver_id, request.event_id, request.amount, staff["display_name"]
+        _send_receipt_message, request.contributor_id, request.receiver_id, request.event_id, request.amount, staff["display_name"], serial_number
     )
-    return {"success": True, "message": message}
+    return {"success": True, "message": message, "serial_number": serial_number, "transaction_id": transaction_id}
 
 
-def _send_receipt_message(contributor_id: int, receiver_id: int, event_id: int, amount: float, staff_name: str) -> None:
+def _send_receipt_message(
+    contributor_id: int, receiver_id: int, event_id: int, amount: float,
+    staff_name: str, serial_number: int | None,
+) -> None:
     """Runs after the response is sent; a WhatsApp problem must never affect the saved contribution."""
     try:
         family = get_family_profile(contributor_id)
@@ -260,7 +345,7 @@ def _send_receipt_message(contributor_id: int, receiver_id: int, event_id: int, 
                 "event": event["event_name"],
                 "event_date": event["event_date"].strftime("%d-%m-%Y"),
                 "host": host["husband_name"] if host else None,
-                "serial": family.get("serial_number"),
+                "serial": serial_number,
                 "amount": amount,
                 "staff": staff_name,
                 "time": now_ist.strftime("%d-%m-%Y %H:%M"),
@@ -271,8 +356,9 @@ def _send_receipt_message(contributor_id: int, receiver_id: int, event_id: int, 
 
 
 @app.get("/events/{event_id}/denomination-summary")
-def get_event_denomination_summary_endpoint(event_id: int, _: dict = Depends(require_staff_session)) -> dict:
+def get_event_denomination_summary_endpoint(event_id: int, staff: dict = Depends(require_staff_session)) -> dict:
     """Live total + note-by-note breakdown collected so far for this event."""
+    require_assigned_event_access(event_id, staff)
     return get_event_denomination_summary(event_id)
 
 
@@ -284,6 +370,27 @@ def staff_login_endpoint(request: StaffLoginRequest) -> dict:
         raise HTTPException(status_code=401, detail="தவறான PIN.")
     token = _issue_staff_session(staff)
     return {**staff, "session_token": token}
+
+
+@app.get("/events/{event_id}/counter-denomination-summary")
+def get_event_counter_denomination_summary_endpoint(
+    event_id: int, staff: dict = Depends(require_staff_session)
+) -> list[dict]:
+    """All counters' aggregate cash breakdowns, visible to staff assigned to this event."""
+    require_assigned_event_access(event_id, staff)
+    denominations_by_staff = {
+        row["staff_id"]: row["denominations"]
+        for row in get_staff_denomination_summary(event_id)
+    }
+    return [
+        {
+            "staff_id": row["staff_id"],
+            "display_name": row["display_name"],
+            "total_amount": row["total_amount"],
+            "denominations": denominations_by_staff.get(row["staff_id"], {}),
+        }
+        for row in get_staff_collections_summary(event_id)
+    ]
 
 
 @app.post("/staff/logout")
@@ -312,6 +419,8 @@ def list_staff_accounts_endpoint(_: dict = Depends(require_admin_session)) -> li
 @app.get("/staff/me/collections")
 def my_collections_endpoint(event_id: int | None = Query(default=None), staff: dict = Depends(require_staff_session)) -> list[dict]:
     """Contributions personally recorded by the logged-in staff member."""
+    if event_id is not None:
+        require_assigned_event_access(event_id, staff)
     return get_staff_collections(staff["staff_id"], event_id)
 
 
@@ -444,10 +553,12 @@ def list_users(search: str | None = Query(default=None), _: dict = Depends(requi
 
 
 @app.put("/users/{user_id}", response_model=UserResponse)
-def update_user_endpoint(user_id: int, request: UserRequest, _: dict = Depends(require_staff_session)) -> dict:
-    """Receive updated user details and save them for the selected user ID."""
+def update_user_endpoint(user_id: int, request: UserRequest, staff: dict = Depends(require_staff_session)) -> dict:
+    """Save profile updates and attribute changes to the authenticated staff member."""
     try:
-        user = update_user(user_id=user_id, **clean_user_fields(request))
+        user = update_user(
+            user_id=user_id, changed_by_staff_id=staff["staff_id"], **clean_user_fields(request)
+        )
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Could not update user: {error}") from error
 

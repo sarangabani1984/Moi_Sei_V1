@@ -7,10 +7,10 @@
   <!-- Tailwind CSS CDN for clean, responsive admin styling -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="config.js"></script>
-  <!-- Google Fonts: Noto Sans Tamil (Tamil headings/text) + Inter (Latin text and numbers) -->
+  <!-- Google Fonts: Kavivanar (handwritten receipt heading), Noto Tamil, and Latin text fonts. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Kavivanar&family=Noto+Sans+Tamil:wght@400;500;600;700;800&family=Noto+Serif+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -138,6 +138,21 @@
     #myCollectionsBody, #adminCountersBody, #denominationSummaryBody, #groupBatchList { font-size: 14px; }
     .tg-chips > button { font-size: 13px; padding: 6px 12px; border-radius: 10px; transition: box-shadow .15s, background-color .15s; }
     .tg-chips > button:hover { box-shadow: 0 0 0 2px rgba(212, 175, 55, .45); }
+    #denominationSummaryPanel { min-width: 0; }
+    #denominationSummaryPanel table { font-size: 14px; }
+    #denominationSummaryPanel th,
+    #denominationSummaryPanel td { white-space: nowrap; }
+
+    @media (min-width: 1024px) {
+      #mainDashboardGrid {
+        grid-template-columns: minmax(320px, 3.8fr) minmax(0, 5.2fr) 332px minmax(0, 3fr);
+        grid-template-areas: "event form tally search";
+      }
+      #eventContextPanel { grid-area: event; min-width: 0; }
+      #userFormPanel { grid-area: form; }
+      #cashTallyPanel { grid-area: tally; }
+      #searchSidebarPanel { grid-area: search; }
+    }
 
     @media (max-width: 400px) {
       #denominationRows > div { padding-left: 12px; padding-right: 12px; gap: 4px; }
@@ -156,10 +171,21 @@
     }
     /* Printable receipt: invisible in the normal UI, shown only inside the browser's print dialog/preview. */
     #receiptPrintArea { display: none; }
+    #eventReportPrintArea { display: none; }
+    .thermal-receipt { width: 72mm; max-width: 100%; margin: 0 auto; overflow-wrap: anywhere; }
+    .receipt-brand { margin: 0; font-family: 'Kavivanar', 'Noto Sans Tamil', 'Nirmala UI', sans-serif; font-size: 26px; font-weight: 400; line-height: 1.5; }
+    .receipt-meta > span { flex: 1; min-width: 0; }
+    .receipt-family { break-inside: avoid; }
     @media print {
-      body * { visibility: hidden; }
-      #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
-      #receiptPrintArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+      /* Roll length is selected in the printer driver; CSS cannot request an automatic roll height. */
+      @page receipt { size: auto; margin: 0; }
+      @page event-report { size: A4; margin: 12mm; }
+      body { display: block !important; margin: 0; min-height: 0 !important; background: #fff; }
+      body > :not(#receiptPrintArea):not(#eventReportPrintArea) { display: none !important; }
+      #receiptPrintArea { display: block !important; page: receipt; box-sizing: border-box; width: 80mm; max-width: 100%; padding: 4mm; }
+      body.printing-event-report #receiptPrintArea { display: none !important; }
+      body.printing-event-report #eventReportPrintArea { display: block !important; page: event-report; width: 100%; }
+      #receiptPrintArea h2, #receiptPrintArea p, #receiptPrintArea tr { break-inside: avoid; }
     }
   </style>
 </head>
@@ -288,10 +314,10 @@
 
   <!-- Main Content Layout: Three Columns (Left Search/Recent, Middle Form, Right Tally) -->
   <main class="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
-    <div class="grid grid-cols-1 xl:grid-cols-[minmax(196px,2fr)_minmax(0,5.2fr)_332px_minmax(0,4fr)] gap-5 items-start">
+    <div id="mainDashboardGrid" class="grid grid-cols-1 gap-5 items-start">
 
       <!-- LEFT SIDEBAR: Inline Search + Last 10 Recent Records (2 cols on lg) -->
-      <section class="tg-card flex flex-col">
+      <section id="searchSidebarPanel" class="tg-card flex flex-col">
         <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
           <h2 class="tg-section-title">தேடு / Search</h2>
         </div>
@@ -314,7 +340,7 @@
       </section>
 
       <!-- MIDDLE COLUMN: User Registration & Edit Form (5 cols on lg) -->
-      <section class="tg-card">
+      <section id="userFormPanel" class="tg-card">
         <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
           <h2 class="tg-section-title">குடும்ப விவரங்கள்</h2>
           <!-- Kept but hidden: existing edit-mode JS still updates these, just no longer shown in the header. -->
@@ -335,6 +361,7 @@
               <label for="serialNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">வரிசை எண்</label>
               <input type="text" id="serialNumber" disabled
                 class="block w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed">
+              <p id="serialNumberStatus" class="mt-1 text-xs text-slate-500" aria-live="polite">Select an event. Final number is assigned on save.</p>
             </div>
             <div class="flex flex-col">
               <label for="isThaimama" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">தாய்மாமன்</label>
@@ -347,7 +374,7 @@
 
           <!-- Row 2: Phone | Paste details (frontend-only, auto-parses into the fields below) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div class="relative">
               <label for="phoneNumber" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 போன் <span class="text-red-500">*</span>
               </label>
@@ -357,13 +384,15 @@
                 name="phone_number" 
                 placeholder="எ.கா. 9876543210" 
                 required
+                onkeydown="handlePhoneFieldKeydown(event)"
                 class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-900 transition-colors"
               >
+              <div id="phoneNumberSuggestions" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto text-xs"></div>
             </div>
             <div>
-              <label for="pasteDetails" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">முழு விவரம்</label>
+              <label for="pasteDetails" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Full Details</label>
               <textarea id="pasteDetails" rows="1"
-                placeholder="சொந்தஊர் கணவர் மனைவி தொழில் தொகை"
+                placeholder="Native Place Husband Wife Job Amount (double spaces skip fields)"
                 class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"></textarea>
             </div>
           </div>
@@ -438,7 +467,7 @@
           <!-- Form Actions: sticky to the viewport bottom so Save is always reachable without scrolling -->
           <div class="sticky bottom-0 z-10 -mx-5 px-5 pt-3 pb-3 bg-white border-t border-[#EADFC4] flex flex-wrap items-stretch gap-2.5">
             <button type="button" onclick="addCurrentContributorToGroup()" title="Add this contributor and amount to the group (Ctrl+G)" class="tg-btn tg-btn-gold tg-btn-sm w-full sm:w-auto inline-flex justify-center items-center">
-              குழுவில் சேர் (Ctrl+G)
+              Add to Group (Ctrl+G)
             </button>
             <!-- Submit (Save / Update) Button -->
             <button 
@@ -448,7 +477,7 @@
               <span id="submitSpinner" class="hidden mr-2">
                 <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               </span>
-              <span id="submitBtnText">சேமிக்கவும்</span>
+              <span id="submitBtnText">Save</span>
             </button>
 
             <!-- Cancel Edit Button (Hidden by default, shown in edit mode) -->
@@ -457,7 +486,7 @@
               id="cancelEditBtn" 
               onclick="cancelEdit()" 
               class="tg-btn tg-btn-ghost hidden w-full sm:w-auto">
-              திருத்தத்தை ரத்து செய்
+              Cancel Edit
             </button>
 
             <!-- Clear Button -->
@@ -466,20 +495,21 @@
               id="clearBtn" 
               onclick="clearForm()" 
               class="tg-btn tg-btn-reset w-full sm:w-auto">
-              அழிக்கவும்
+              Clear
             </button>
           </div>
         </form>
       </section>
 
       <!-- RIGHT COLUMN: Cash Denomination Tally + Live Match Comparator (5 cols on lg) -->
-      <section class="w-full max-w-[400px] mx-auto xl:max-w-none xl:mx-0 space-y-5">
+      <section id="cashTallyPanel" class="w-full max-w-[400px] mx-auto xl:max-w-none xl:mx-0 space-y-5">
 
         <!-- Cash Denomination Tally Card -->
         <div class="tg-card">
           <div class="tg-section-head min-h-[64px] flex items-center justify-center text-center">
             <h3 class="tg-section-title">நோட்டுகள் சரிபார்ப்பு</h3>
           </div>
+          <p class="px-4 pt-2 text-xs text-slate-500 text-center">Jump to Deno: Ctrl+Z / Ctrl+Alt+D</p>
 
           <div id="denominationRows" class="divide-y divide-[#F3ECD9]"></div>
         </div>
@@ -505,7 +535,7 @@
           <div class="sticky bottom-0 z-10 px-2 py-2.5 border-t border-[#EADFC4] flex items-center justify-center gap-2 bg-[#FFFDF6]">
             <div class="flex flex-wrap justify-center gap-1.5">
               <button type="button" onclick="printTallySlip()" class="tg-btn tg-btn-print tg-btn-sm tg-btn-tight">ரசீது / Print</button>
-              <button type="button" onclick="confirmTally()" class="tg-btn tg-btn-primary tg-btn-sm tg-btn-tight">உறுதி செய் (Ctrl+Enter)</button>
+              <button type="button" id="confirmTallyBtn" onclick="confirmTally()" class="tg-btn tg-btn-primary tg-btn-sm tg-btn-tight disabled:opacity-50">உறுதி செய் (Ctrl+Enter)</button>
             </div>
           </div>
         </div>
@@ -526,36 +556,57 @@
 
        <!-- RIGHT RAIL: Event/Receiver context + status panels, kept visually separate
          from the Denomination Tally workflow column so that one starts right at the top. -->
-      <section class="space-y-5">
+      <section id="eventContextPanel" class="space-y-5">
 
         <!-- Event & Receiver: compact status bar. Full picker lives in a modal (Ctrl+E) so it doesn't occupy the page. -->
         <div class="tg-card">
           <div class="tg-section-head min-h-[64px] flex items-center">
             <div class="flex items-center gap-2 flex-wrap text-[15px] text-slate-700">
-              <span class="font-bold text-brand-600">நிகழ்வு:</span>
-              <span id="eventStatusText">தேர்ந்தெடுக்கப்படவில்லை</span>
+              <span class="font-bold text-brand-600">Event:</span>
+              <span id="eventStatusText">Not selected</span>
               <span class="text-accent-500">|</span>
-              <span class="font-bold text-brand-600">பெறுநர்:</span>
+              <span class="font-bold text-brand-600">Receiver:</span>
               <span id="receiverStatusText">—</span>
             </div>
           </div>
           <div class="px-5 py-3 space-y-2.5">
             <div class="tg-chips flex items-center gap-2 flex-wrap">
-              <button type="button" onclick="toggleDenominationSummary()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-300 rounded-md transition-colors">
-                📊 நோட்டு சுருக்கம்
-              </button>
               <button type="button" id="myCollectionsToggleBtn" onclick="toggleMyCollections()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
                 📒 எனது வசூல்கள்
               </button>
               <button type="button" id="adminCountersToggleBtn" onclick="toggleAdminCounters()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors">
                 🛠 கவுண்டர்கள்
               </button>
+              <button type="button" id="eventPdfReportBtn" onclick="printEventTransactionReport()" disabled class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Print this event's transaction report or save it as PDF">
+                PDF
+              </button>
               <button type="button" onclick="openEventModal()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-md transition-colors">
-                நிகழ்வைத் தேர்ந்தெடு (Ctrl+E)
+                Select Event
               </button>
             </div>
             <p id="activeContributorLabel" class="w-full text-[13px] text-slate-500"></p>
           </div>
+        </div>
+
+        <!-- Shared event-scoped counter totals stay below the event box in the left column. -->
+        <div id="denominationSummaryPanel" class="tg-card p-4">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <h3 class="tg-panel-title">Live Deno</h3>
+            <span id="denominationSummaryTotal" class="text-lg font-extrabold text-brand-600 whitespace-nowrap">—</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead><tr class="bg-accent-50">
+                <th scope="col" class="border border-accent-200 p-2 text-left">Counter</th>
+                <th scope="col" class="border border-accent-200 p-2 text-left">Deno</th>
+                <th scope="col" class="border border-accent-200 p-2 text-right">Total collected</th>
+              </tr></thead>
+              <tbody id="denominationSummaryBody">
+                <tr><td colspan="3" class="p-2 text-slate-500">Select an event to view all counters.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Same event only. Refreshes every 10 seconds. Totals include all recorded collections; older collections may not have denomination details.</p>
         </div>
 
         <!-- My Collections: hidden by default, toggled on demand. Shows only what THIS logged-in counter recorded. -->
@@ -595,19 +646,18 @@
               <button type="button" onclick="toggleCreateStaffForm()" class="tg-btn tg-btn-ghost tg-btn-sm">ரத்து</button>
             </div>
           </div>
-        </div>
 
-        <!-- Denomination Summary: hidden by default, toggled on demand so it doesn't clutter the screen -->
-        <div id="denominationSummaryPanel" class="hidden tg-card p-5">
-          <div class="flex items-center justify-between mb-3">
+          <div id="eventAssignmentsSection" class="mt-4 pt-4 border-t border-[#EADFC4] space-y-3">
             <div>
-              <h3 class="tg-panel-title">இந்த நிகழ்விற்கான நோட்டு சுருக்கம்</h3>
-              <p class="text-xs text-slate-500">Live Denomination Summary for this Event</p>
+              <h4 class="font-semibold text-brand-700">Event Counter Assignments</h4>
+              <p class="text-xs text-slate-500">Choose which counters may work on each event.</p>
             </div>
-            <span id="denominationSummaryTotal" class="text-lg font-extrabold text-brand-600">₹0</span>
+            <select id="assignmentEventSelect" onchange="loadEventCounterAssignments()" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
+              <option value="">Select an event</option>
+            </select>
+            <div id="eventAssignmentCounters" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+            <button type="button" onclick="saveEventCounterAssignments()" class="tg-btn tg-btn-primary tg-btn-sm">Save Assignments</button>
           </div>
-          <div id="denominationSummaryBody" class="space-y-1.5"></div>
-          <p class="text-xs text-slate-400 mt-2">* இந்த அம்சம் தொடங்கியபின் பதிவான பங்களிப்புகளுக்கு மட்டும் நோட்டு எண்ணிக்கை கிடைக்கும்.</p>
         </div>
 
       </section>
@@ -644,7 +694,7 @@
       <div class="p-5 space-y-3">
         <div class="flex items-center justify-between gap-2">
           <label for="eventSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">நிகழ்வைத் தேர்ந்தெடுக்கவும்</label>
-          <button type="button" onclick="toggleNewEventForm()" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
+          <button type="button" id="createNewEventBtn" onclick="toggleNewEventForm()" class="hidden inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-accent-700 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-md transition-colors">
             + புதிய நிகழ்வு
           </button>
         </div>
@@ -695,6 +745,8 @@
       </div>
 
       <div id="lastReceiptModalBody" class="p-5 text-sm"></div>
+
+      <p class="px-5 pb-3 text-xs text-slate-500">80 mm thermal receipt: select your receipt printer and 80 mm roll paper, use 100% scale and no margins, and turn off browser headers and footers. Event reports use A4. A Windows printer driver and a physical test print are still required; printing opens the browser dialog.</p>
 
       <div class="px-5 pb-5 flex gap-2">
         <button type="button" onclick="reprintLastReceipt()" class="tg-btn tg-btn-print tg-btn-sm flex-1">🖨 மீண்டும் அச்சிடு (Print)</button>
@@ -825,7 +877,9 @@
     let currentUsersList = [];
     let isEditMode = false;
     let phoneLookupTimer = null;
-    let lastPhoneLookup = '';
+    let phoneSuggestionRequestId = 0;
+    let phoneSuggestionMatches = [];
+    let phoneSuggestionActiveIndex = -1;
 
     // =========================================================================
     // Staff Login: gates the whole Admin Panel. Each counter/admin has their own
@@ -923,6 +977,7 @@
       document.getElementById('logoutBtn').classList.add('hidden');
       document.getElementById('myCollectionsToggleBtn').classList.add('hidden');
       document.getElementById('adminCountersToggleBtn').classList.add('hidden');
+      updateEventReportButton();
       resetToggledPanels();
       showStaffLoginOverlay();
     }
@@ -933,7 +988,13 @@
       document.getElementById('myCollectionsPanel').classList.add('hidden');
       document.getElementById('adminCountersPanel').classList.add('hidden');
       document.getElementById('createStaffForm').classList.add('hidden');
-      document.getElementById('denominationSummaryPanel').classList.add('hidden');
+      document.getElementById('newEventForm').classList.add('hidden');
+      clearInterval(denominationSummaryTimer);
+      denominationSummaryTimer = null;
+      denominationSummaryRequest?.abort();
+      serialNumberRequest?.abort();
+      document.getElementById('denominationSummaryTotal').textContent = '—';
+      document.getElementById('denominationSummaryBody').innerHTML = '<tr><td colspan="3" class="p-2 text-slate-500">Select an event to view all counters.</td></tr>';
     }
 
     // Called once after a successful login (fresh or restored from localStorage) to populate the main app.
@@ -941,6 +1002,12 @@
       loadUsers();
       loadNextSerialNumber();
       loadEvents();
+      if (!denominationSummaryTimer) {
+        denominationSummaryTimer = setInterval(() => {
+          if (currentStaff && !document.hidden && !denominationSummaryRequest) loadDenominationSummary();
+          if (currentStaff && !document.hidden && !serialNumberRequest) loadNextSerialNumber();
+        }, 10000);
+      }
     }
 
     function applyStaffUiForRole() {
@@ -948,9 +1015,10 @@
       document.getElementById('staffBadge').classList.remove('hidden');
       document.getElementById('staffNameText').textContent = `${currentStaff.display_name} (${currentStaff.role === 'admin' ? 'நிர்வாகி' : 'கவுண்டர்'})`;
       document.getElementById('logoutBtn').classList.remove('hidden');
-      document.getElementById('myCollectionsToggleBtn').classList.remove('hidden');
+      document.getElementById('createNewEventBtn').classList.toggle('hidden', currentStaff.role !== 'admin');
       // Admin-only panel: never shown to a counter login, regardless of leftover state from a prior session.
       document.getElementById('adminCountersToggleBtn').classList.toggle('hidden', currentStaff.role !== 'admin');
+      updateEventReportButton();
     }
 
     // Wraps fetch(): merges the staff bearer token into every protected call, and if the
@@ -963,6 +1031,7 @@
       if (response.status === 401) {
         currentStaff = null;
         localStorage.removeItem(STAFF_SESSION_KEY);
+        resetToggledPanels();
         showStaffLoginOverlay('அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்.');
       }
       return response;
@@ -973,6 +1042,7 @@
       renderDenominationRows();
       recalculateTally();
       document.getElementById('phoneNumber').addEventListener('input', handlePhoneInput);
+      document.getElementById('phoneNumber').addEventListener('blur', () => setTimeout(hidePhoneSuggestions, 150));
       document.getElementById('husbandName').addEventListener('blur', handleHusbandNameBlur);
       document.getElementById('wifeName').addEventListener('blur', handleWifeNameBlur);
       document.getElementById('pasteDetails').addEventListener('blur', handlePasteDetails);
@@ -996,7 +1066,7 @@
       }
     });
 
-    // Ctrl+S (or Cmd+S) saves the form; Ctrl+E opens the Event & Receiver picker; Ctrl+Enter confirms the contribution. Escape closes whichever modal is open.
+    // Ctrl+Z overrides Undo on the entry screen; Ctrl+Alt+D also focuses denomination entry.
     document.addEventListener('keydown', (event) => {
       const isSaveShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's';
       if (isSaveShortcut) {
@@ -1011,6 +1081,21 @@
       if (isConfirmShortcut) {
         event.preventDefault();
         confirmTally();
+        return;
+      }
+      const isDenoJumpShortcut = event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey &&
+        event.key.toLowerCase() === 'z' && !event.isComposing;
+      if (isDenoJumpShortcut) {
+        const entryScreenVisible = currentStaff && [
+          'staffLoginOverlay', 'searchModalOverlay', 'eventModalOverlay', 'lastReceiptModalOverlay',
+        ].every(id => document.getElementById(id).classList.contains('hidden'));
+        if (!entryScreenVisible) return;
+      }
+      const isDenominationShortcut = isDenoJumpShortcut ||
+        (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'd');
+      if (isDenominationShortcut) {
+        event.preventDefault();
+        focusFirstDenominationInput();
         return;
       }
       const isGroupAddShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'g';
@@ -1074,6 +1159,12 @@
     let groupBatch = [];
     let groupEventId = null;
     let groupReceiverId = null;
+    let denominationSummaryTimer = null;
+    let denominationSummaryRequest = null;
+    let denominationSummaryEventId = null;
+    let serialNumberRequest = null;
+    let serialNumberContext = null;
+    let contributionSaving = false;
 
     // Auto-printed receipt: kept in localStorage so it can be re-viewed/reprinted even after a page reload,
     // since there's no physical printer here to verify output against — this is the only way to check it.
@@ -1100,10 +1191,12 @@
     }
 
     function toggleNewEventForm() {
+      if (currentStaff?.role !== 'admin') return;
       document.getElementById('newEventForm').classList.toggle('hidden');
     }
 
     async function submitNewEvent() {
+      if (currentStaff?.role !== 'admin') return;
       const eventName = document.getElementById('newEventName').value.trim();
       const eventDate = document.getElementById('newEventDate').value;
       const eventPlace = document.getElementById('newEventPlace').value.trim();
@@ -1145,6 +1238,7 @@
     // Shows the locked event host, or a manual receiver picker when the event has none yet.
     function handleEventChange() {
       const eventId = document.getElementById('eventSelect').value;
+      updateEventReportButton();
       const lockedDisplay = document.getElementById('receiverLockedDisplay');
       const lockedName = document.getElementById('receiverLockedName');
       const pickerWrapper = document.getElementById('receiverPickerWrapper');
@@ -1152,6 +1246,8 @@
 
       lockedDisplay.classList.add('hidden');
       pickerWrapper.classList.add('hidden');
+      loadDenominationSummary();
+      loadNextSerialNumber();
 
       if (!eventId) return;
       const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
@@ -1176,8 +1272,6 @@
       }
       updateEventStatusBar();
       loadEventContributors();
-      loadNextSerialNumber();
-      refreshDenominationSummaryIfOpen();
       refreshMyCollectionsIfOpen();
       refreshAdminCountersIfOpen();
     }
@@ -1248,6 +1342,7 @@
       const body = document.getElementById('adminCountersBody');
       body.innerHTML = '<p class="text-slate-400">ஏற்றப்படுகிறது...</p>';
       try {
+        await loadAssignmentEventOptions();
         const summaryUrl = eventId
           ? `${BASE_URL}/staff/collections-summary?event_id=${eventId}`
           : `${BASE_URL}/staff/collections-summary`;
@@ -1287,6 +1382,70 @@
       }
     }
 
+    async function loadAssignmentEventOptions() {
+      const select = document.getElementById('assignmentEventSelect');
+      const selectedId = select.value;
+      select.innerHTML = '<option value="">Select an event</option>' + currentEventsList
+        .map(event => `<option value="${event.event_id}">${escapeHtml(event.event_name)} — ${escapeHtml(event.event_date)}</option>`)
+        .join('');
+      if (selectedId && currentEventsList.some(event => String(event.event_id) === selectedId)) {
+        select.value = selectedId;
+      } else if (currentEventsList.length) {
+        select.value = String(currentEventsList[0].event_id);
+      }
+      await loadEventCounterAssignments();
+    }
+
+    async function loadEventCounterAssignments() {
+      if (currentStaff?.role !== 'admin') return;
+      const eventId = document.getElementById('assignmentEventSelect').value;
+      const container = document.getElementById('eventAssignmentCounters');
+      if (!eventId) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Create or select an event first.</p>';
+        return;
+      }
+      container.innerHTML = '<p class="text-xs text-slate-400">Loading counters...</p>';
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/counter-assignments`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Could not load assignments');
+        const assignments = await response.json();
+        container.innerHTML = assignments.counters.length
+          ? assignments.counters.map(counter => `
+            <label class="flex items-center gap-2 rounded border border-slate-100 px-2.5 py-1.5 text-sm">
+              <input type="checkbox" name="assignedCounterId" value="${counter.staff_id}" ${assignments.assigned_counter_ids.includes(counter.staff_id) ? 'checked' : ''}>
+              <span>${escapeHtml(counter.display_name)}</span>
+            </label>`).join('')
+          : '<p class="text-xs text-slate-400">No active counters are available.</p>';
+      } catch (error) {
+        container.innerHTML = '<p class="text-xs text-red-500">Could not load counter assignments.</p>';
+      }
+    }
+
+    async function saveEventCounterAssignments() {
+      if (currentStaff?.role !== 'admin') return;
+      const eventId = document.getElementById('assignmentEventSelect').value;
+      if (!eventId) {
+        showGlobalAlert('Select an event first.', 'error');
+        return;
+      }
+      const counterIds = [...document.querySelectorAll('input[name="assignedCounterId"]:checked')].map(input => Number(input.value));
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/counter-assignments`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ counter_ids: counterIds }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Server returned ${response.status}`);
+        }
+        showGlobalAlert('Event counter assignments saved.', 'success');
+        await loadEventCounterAssignments();
+      } catch (error) {
+        showGlobalAlert(`Could not save event assignments: ${error.message}`, 'error');
+      }
+    }
+
     function toggleCreateStaffForm() {
       document.getElementById('createStaffForm').classList.toggle('hidden');
     }
@@ -1320,47 +1479,51 @@
       }
     }
 
-    // Denomination Summary: hidden by default; toggled on demand so it doesn't clutter the main screen.
-    function toggleDenominationSummary() {
-      const panel = document.getElementById('denominationSummaryPanel');
-      panel.classList.toggle('hidden');
-      if (!panel.classList.contains('hidden')) {
-        loadDenominationSummary();
-      }
-    }
-
-    function refreshDenominationSummaryIfOpen() {
-      const panel = document.getElementById('denominationSummaryPanel');
-      if (!panel.classList.contains('hidden')) {
-        loadDenominationSummary();
-      }
-    }
-
     async function loadDenominationSummary() {
+      denominationSummaryRequest?.abort();
       const eventId = document.getElementById('eventSelect').value;
       const body = document.getElementById('denominationSummaryBody');
-      if (!eventId) {
-        document.getElementById('denominationSummaryTotal').textContent = '₹0';
-        body.innerHTML = '<p class="text-slate-400">முதலில் ஒரு நிகழ்வைத் தேர்ந்தெடுக்கவும்.</p>';
+      const total = document.getElementById('denominationSummaryTotal');
+      if (denominationSummaryEventId !== eventId) {
+        denominationSummaryEventId = eventId;
+        total.textContent = '—';
+        body.innerHTML = '<tr><td colspan="3" class="p-2 text-slate-500">Loading counters...</td></tr>';
+      }
+      if (!eventId || !currentStaff) {
+        denominationSummaryRequest = null;
+        total.textContent = '—';
+        body.innerHTML = '<tr><td colspan="3" class="p-2 text-slate-500">Select an event to view all counters.</td></tr>';
         return;
       }
-      body.innerHTML = '<p class="text-slate-400">ஏற்றப்படுகிறது...</p>';
+      const controller = new AbortController();
+      denominationSummaryRequest = controller;
       try {
-        const response = await authFetch(`${BASE_URL}/events/${eventId}/denomination-summary`, { headers: { 'Accept': 'application/json' } });
-        if (!response.ok) throw new Error('Could not load summary');
-        const summary = await response.json();
-        document.getElementById('denominationSummaryTotal').textContent = formatRupees(summary.total_amount);
-        const rows = DENOMINATIONS.map(value => {
-          const count = summary.denominations?.[value] ?? summary.denominations?.[String(value)] ?? 0;
-          return `<div class="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
-            <span class="font-semibold text-slate-700">₹${value}</span>
-            <span class="text-slate-500">${count} நோட்டுகள்</span>
-            <span class="font-semibold text-slate-800">${formatRupees(value * count)}</span>
-          </div>`;
-        }).join('');
-        body.innerHTML = rows;
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/counter-denomination-summary`, {
+          headers: { 'Accept': 'application/json' }, signal: controller.signal,
+        });
+        if (!response.ok) {
+          const details = await response.json();
+          throw new Error(details.detail || `Could not load summary (${response.status})`);
+        }
+        const rows = await response.json();
+        if (controller.signal.aborted || !currentStaff || document.getElementById('eventSelect').value !== eventId) return;
+        total.textContent = formatRupees(rows.reduce((sum, row) => sum + Number(row.total_amount), 0));
+        body.innerHTML = rows.length ? rows.map(row => {
+          const denominations = row.denominations;
+          const deno = DENOMINATIONS.filter(value => Number(denominations[value]) > 0)
+            .map(value => `₹${value} × ${Number(denominations[value])}`).join(', ');
+          return `<tr>
+            <th scope="row" class="border border-accent-200 p-2 text-left">${escapeHtml(row.display_name)}</th>
+            <td class="border border-accent-200 p-2">${deno || '—'}</td>
+            <td class="border border-accent-200 p-2 text-right whitespace-nowrap font-semibold">${formatRupees(Number(row.total_amount))}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="3" class="p-2 text-slate-500">No counters available.</td></tr>';
       } catch (error) {
-        body.innerHTML = '<p class="text-red-500">சுருக்கத்தை ஏற்ற முடியவில்லை.</p>';
+        if (controller.signal.aborted) return;
+        total.textContent = '—';
+        body.innerHTML = `<tr><td colspan="3" class="p-2 text-red-600">${escapeHtml(error.message)}</td></tr>`;
+      } finally {
+        if (denominationSummaryRequest === controller) denominationSummaryRequest = null;
       }
     }
 
@@ -1371,11 +1534,81 @@
       const eventStatusText = document.getElementById('eventStatusText');
       const receiverStatusText = document.getElementById('receiverStatusText');
 
-      eventStatusText.textContent = selectedEvent ? `${selectedEvent.event_name} — ${selectedEvent.event_date}` : 'தேர்ந்தெடுக்கப்படவில்லை';
+      eventStatusText.textContent = selectedEvent ? `${selectedEvent.event_name} — ${selectedEvent.event_date}` : 'Not selected';
 
       const receiverId = getSelectedReceiverId();
       const receiver = receiverId ? currentUsersList.find(user => user.id === receiverId) : null;
       receiverStatusText.textContent = receiver ? `${receiver.husband_name} | ${receiver.phone_number}` : '—';
+    }
+
+    function updateEventReportButton() {
+      const button = document.getElementById('eventPdfReportBtn');
+      const isAdmin = currentStaff?.role === 'admin';
+      button.classList.toggle('hidden', !isAdmin);
+      button.disabled = !isAdmin || !document.getElementById('eventSelect').value;
+    }
+
+    async function printEventTransactionReport() {
+      if (currentStaff?.role !== 'admin') return;
+
+      const eventId = document.getElementById('eventSelect').value;
+      const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
+      if (!eventId || !selectedEvent) {
+        showGlobalAlert('முதலில் நிகழ்வைத் தேர்ந்தெடுக்கவும்.', 'error');
+        return;
+      }
+
+      const button = document.getElementById('eventPdfReportBtn');
+      button.disabled = true;
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/transactions`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Server returned ${response.status}`);
+        }
+
+        const transactions = await response.json();
+        const total = transactions.reduce((sum, row) => sum + Number(row.amount), 0);
+        const transactionRows = transactions.length
+          ? transactions.map(row => `<tr>
+              <td>${escapeHtml(row.husband_name || '')}</td>
+              <td>${escapeHtml(row.wife_name || '')}</td>
+              <td>${escapeHtml(row.native_place || '')}</td>
+              <td>${escapeHtml(row.phone_number || '')}</td>
+              <td class="amount">${formatRupees(Number(row.amount))}</td>
+            </tr>`).join('')
+          : '<tr><td colspan="5" class="empty">இந்த நிகழ்வில் பங்களிப்புகள் இல்லை.</td></tr>';
+
+        document.getElementById('eventReportPrintArea').innerHTML = `
+          <style>
+            #eventReportPrintArea { color: #202020; font: 10pt Arial, sans-serif; }
+            #eventReportPrintArea h1 { margin: 0 0 6px; font-size: 20pt; }
+            #eventReportPrintArea .meta { margin: 0 0 18px; color: #555; }
+            #eventReportPrintArea table { width: 100%; border-collapse: collapse; }
+            #eventReportPrintArea th, #eventReportPrintArea td { border: 1px solid #bbb; padding: 7px; text-align: left; vertical-align: top; }
+            #eventReportPrintArea th { background: #f1f1f1; }
+            #eventReportPrintArea .amount { text-align: right; white-space: nowrap; }
+            #eventReportPrintArea .empty { text-align: center; color: #666; padding: 20px; }
+            #eventReportPrintArea tfoot td { font-weight: 700; }
+          </style>
+          <h1>Event Transaction Report</h1>
+          <p class="meta">Event: ${escapeHtml(selectedEvent.event_name)} | Date: ${escapeHtml(selectedEvent.event_date)}<br>
+            Transactions: ${transactions.length} | Total: ${formatRupees(total)}<br>
+            Generated: ${escapeHtml(new Date().toLocaleString('en-IN'))}</p>
+          <table>
+            <thead><tr><th>Husband Name</th><th>Wife Name</th><th>Native Location</th><th>Phone</th><th>Contribution Amount</th></tr></thead>
+            <tbody>${transactionRows}</tbody>
+            <tfoot><tr><td colspan="4">Total Contributions: ${transactions.length}</td><td class="amount">${formatRupees(total)}</td></tr></tfoot>
+          </table>`;
+
+        document.body.classList.add('printing-event-report');
+        window.addEventListener('afterprint', () => document.body.classList.remove('printing-event-report'), { once: true });
+        window.print();
+      } catch (error) {
+        showGlobalAlert(`PDF அறிக்கையை உருவாக்க முடியவில்லை: ${error.message}`, 'error');
+      } finally {
+        updateEventReportButton();
+      }
     }
 
     function getSelectedReceiverId() {
@@ -1512,6 +1745,19 @@
     }
 
     async function confirmTally() {
+      if (contributionSaving) return;
+      contributionSaving = true;
+      const button = document.getElementById('confirmTallyBtn');
+      button.disabled = true;
+      try {
+        await saveAndConfirmTally();
+      } finally {
+        contributionSaving = false;
+        button.disabled = false;
+      }
+    }
+
+    async function saveAndConfirmTally() {
       if (groupBatch.length > 0) {
         const hasUnqueuedContributor = Boolean(
           document.getElementById('phoneNumber').value.trim() ||
@@ -1555,12 +1801,11 @@
           showGlobalAlert('முதலில் போன் எண் & கணவர் பெயரை நிரப்பவும்.', 'error');
           return;
         }
-        const serialNumberValue = Number(document.getElementById('serialNumber').value);
         try {
           const response = await authFetch(`${BASE_URL}/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null }),
+            body: JSON.stringify(payload),
           });
           if (!response.ok) {
             const errJson = await response.json().catch(() => ({}));
@@ -1597,6 +1842,7 @@
           throw new Error(errJson.detail || `Server returned ${response.status}`);
         }
 
+        const savedContribution = await response.json();
         showGlobalAlert(`ரொக்கத் தொகை பதிவு செய்யப்பட்டது: ${formatRupees(cashCounted)}`, 'success');
 
         // Snapshot everything needed for the receipt BEFORE cancelEdit()/clearForm() wipes the form
@@ -1608,7 +1854,7 @@
           eventName: selectedEventForReceipt?.event_name || '—',
           eventDate: selectedEventForReceipt?.event_date || '—',
           hostName: receiverForReceipt ? `${receiverForReceipt.husband_name}${receiverForReceipt.phone_number ? ' | ' + receiverForReceipt.phone_number : ''}` : '—',
-          serialNumber: document.getElementById('serialNumber').value || '—',
+          serialNumber: savedContribution.serial_number,
           contributorName: lastSavedContributorName || '—',
           contributorPhone: document.getElementById('phoneNumber').value || '—',
           amount: formatRupees(formAmount),
@@ -1643,11 +1889,11 @@
     // =========================================================================
 
     // Header printed on every individual slip; change these two lines to update the company name/phones.
-    const RECEIPT_COMPANY_NAME = 'Moi Sei';
+    const RECEIPT_COMPANY_NAME = 'மொய்செய்';
     const RECEIPT_COMPANY_PHONES = '7411346811 / 7868946081';
     const RECEIPT_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-    // Keep each quote to one short line (about 28 characters) so it never wraps on the narrow slip.
+    // Keep quotes concise; the receipt box can wrap longer Tamil lines.
     const RECEIPT_QUOTES = [
       'முயற்சி திருவினை ஆக்கும்',
       'நல்லதே நடக்கும்',
@@ -1691,6 +1937,7 @@
       const text = value => escapeHtml(String(value ?? '').trim());
       const lineIf = (value, style = '') => String(value ?? '').trim() ? `<p style="margin:3px 0;${style}">${text(value)}</p>` : '';
       const rule = '<hr style="border:none;border-top:1px dashed #000;margin:6px 0;">';
+      const quoteBox = quote => `<div style="border:3px solid #000;margin:7px 0;padding:6px 8px;font-family:'Noto Serif Tamil','Nirmala UI','Latha',serif;font-size:16px;font-weight:700;line-height:1.4;overflow-wrap:anywhere;">${text(quote)}</div>`;
       const event = s.event || {};
       const host = s.host || {};
       const notes = (s.denominations || []).filter(item => item.count > 0);
@@ -1703,12 +1950,13 @@
         </table>` : '';
 
       return `
-        <div style="max-width:300px;margin:0 auto;font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
-          <h2 style="margin:0;font-size:22px;">${text(RECEIPT_COMPANY_NAME)}</h2>
+        <div class="thermal-receipt" style="font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
+          <h2 class="receipt-brand">${text(RECEIPT_COMPANY_NAME)}</h2>
           <p style="margin:2px 0;font-size:13px;">${text(RECEIPT_COMPANY_PHONES)}</p>
           ${rule}
-          <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;"><span>${text(s.dateTime)}</span><span>Typer: ${text(s.staff ?? s.receivedBy)}</span></div>
+          <div class="receipt-meta" style="display:flex;justify-content:space-between;gap:8px;font-size:12px;"><span>${text(s.dateTime)}</span><span>Typer: ${text(s.staff ?? s.receivedBy)}</span></div>
           ${rule}
+          ${quoteBox(s.quote ?? pickReceiptQuote())}
           <p style="margin:3px 0;">Serial No : ${text(s.serialNumber)}</p>
           ${rule}
           ${lineIf(s.place, 'font-size:16px;')}
@@ -1726,7 +1974,6 @@
           ${lineIf(event.location)}
           ${lineIf(host.phone)}
           ${rule}
-          ${lineIf(s.quote ?? pickReceiptQuote(), 'font-size:12px;white-space:nowrap;')}
         </div>`;
     }
 
@@ -1736,14 +1983,15 @@
       const text = value => escapeHtml(String(value ?? '').trim());
       const lineIf = (value, style = '') => String(value ?? '').trim() ? `<p style="margin:3px 0;${style}">${text(value)}</p>` : '';
       const rule = '<hr style="border:none;border-top:1px dashed #000;margin:6px 0;">';
+      const quoteBox = quote => `<div style="border:3px solid #000;margin:7px 0;padding:6px 8px;font-family:'Noto Serif Tamil','Nirmala UI','Latha',serif;font-size:16px;font-weight:700;line-height:1.4;overflow-wrap:anywhere;">${text(quote)}</div>`;
       const box = 'border:1px solid #000;margin:6px 0;';
       const event = data.event || {};
       const host = data.host || {};
       const handedOverBy = data.handedOverBy && data.handedOverBy !== '—' ? `கொண்டு வந்தவர்: ${data.handedOverBy}` : '';
 
       const blocks = (data.contributors || []).map(c => `
-        <div style="${box}">
-          <div style="display:flex;border-bottom:1px solid #000;font-size:12px;">
+        <div class="receipt-family" style="${box}">
+          <div class="receipt-meta" style="display:flex;border-bottom:1px solid #000;font-size:12px;">
             <span style="flex:1;padding:2px 4px;border-right:1px solid #000;">${text(data.dateTime)}</span>
             <span style="flex:1;padding:2px 4px;">Typer: ${text(data.receivedBy)}</span>
           </div>
@@ -1765,9 +2013,10 @@
         </div>` : `<p style="margin:6px 0;font-size:16px;">Total ${text(data.totalAmount)}</p>`;
 
       return `
-        <div style="max-width:300px;margin:0 auto;font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
-          <h2 style="margin:0;font-size:22px;">${text(RECEIPT_COMPANY_NAME)}</h2>
+        <div class="thermal-receipt" style="font-family:'Nirmala UI','Latha','Noto Sans Tamil',Arial,sans-serif;font-size:14px;font-weight:600;color:#000;text-align:center;">
+          <h2 class="receipt-brand">${text(RECEIPT_COMPANY_NAME)}</h2>
           <p style="margin:2px 0;font-size:13px;">${text(RECEIPT_COMPANY_PHONES)}</p>
+          ${quoteBox(data.quote ?? pickReceiptQuote())}
           ${blocks}
           ${notesHtml}
           ${lineIf(handedOverBy, 'font-size:12px;')}
@@ -1780,7 +2029,6 @@
           ${lineIf(event.location)}
           ${lineIf(host.phone)}
           ${rule}
-          ${lineIf(data.quote ?? pickReceiptQuote(), 'font-size:12px;white-space:nowrap;')}
         </div>`;
     }
 
@@ -1792,13 +2040,19 @@
       lastReceiptData = data;
       try { localStorage.setItem(LAST_RECEIPT_KEY, JSON.stringify(data)); } catch (error) { /* best-effort */ }
       document.getElementById('receiptPrintArea').innerHTML = renderReceiptMarkup(data);
-      requestAnimationFrame(() => window.print());
+      requestAnimationFrame(async () => {
+        await document.fonts.ready;
+        window.print();
+      });
     }
 
     function reprintLastReceipt() {
       if (!lastReceiptData) return;
       document.getElementById('receiptPrintArea').innerHTML = renderReceiptMarkup(lastReceiptData);
-      requestAnimationFrame(() => window.print());
+      requestAnimationFrame(async () => {
+        await document.fonts.ready;
+        window.print();
+      });
     }
 
     function openLastReceiptModal() {
@@ -1842,6 +2096,7 @@
     }
 
     function addCurrentContributorToGroup() {
+      if (contributionSaving) return;
       const eventId = document.getElementById('eventSelect').value;
       const receiverId = getSelectedReceiverId();
       if (!eventId || !receiverId) {
@@ -1881,9 +2136,6 @@
         return;
       }
 
-      const currentSerial = Number(document.getElementById('serialNumber').value);
-      const queuedNewUsers = groupBatch.filter(entry => !entry.contributorId).length;
-      const serialNumber = Number.isFinite(currentSerial) && currentSerial > 0 ? currentSerial + queuedNewUsers : null;
       if (groupBatch.length === 0) {
         groupEventId = eventId;
         groupReceiverId = receiverId;
@@ -1896,7 +2148,7 @@
         place: payload.native_place,
         wife: payload.wife_name,
         amount,
-        serialNumber: serialNumber || '—',
+        serialNumber: 'Assigned on save',
       });
       updateGroupBatchPanel();
       showGlobalAlert(`"${payload.husband_name}" குழுவில் சேர்க்கப்பட்டார் (${formatRupees(amount)}).`, 'success');
@@ -1930,10 +2182,7 @@
             const response = await authFetch(`${BASE_URL}/users`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({
-                ...entry.userPayload,
-                serial_number: entry.serialNumber === '—' ? null : entry.serialNumber,
-              }),
+              body: JSON.stringify(entry.userPayload),
             });
             if (!response.ok) {
               const errJson = await response.json().catch(() => ({}));
@@ -1964,6 +2213,8 @@
             const errJson = await response.json().catch(() => ({}));
             throw new Error(`${entry.name}: ${errJson.detail || response.status}`);
           }
+          const savedContribution = await response.json();
+          entry.serialNumber = savedContribution.serial_number;
           entry.posted = true;
           entry.denominationsRecorded = includeDenominations;
           denominationsRecorded = denominationsRecorded || includeDenominations;
@@ -2019,34 +2270,57 @@
       }
     }
 
-    // Preview the serial number the next saved user will receive (display-only). Scoped to the currently
-    // selected event (count of distinct contributors to it + 1) so each event's numbering starts at 1.
+    // A preview is not reserved: the successful contribution response supplies the receipt's final number.
     async function loadNextSerialNumber() {
+      serialNumberRequest?.abort();
+      const eventId = document.getElementById('eventSelect').value;
+      const contributorId = lastSavedContributorId;
+      const input = document.getElementById('serialNumber');
+      const status = document.getElementById('serialNumberStatus');
+      const context = `${eventId}:${contributorId ?? ''}`;
+      if (serialNumberContext !== context) {
+        serialNumberContext = context;
+        input.value = '';
+        status.textContent = 'Loading family count...';
+      }
+      if (!eventId || !currentStaff) {
+        serialNumberRequest = null;
+        input.value = '';
+        status.textContent = 'Select an event. Final number is assigned on save.';
+        return;
+      }
+      const controller = new AbortController();
+      serialNumberRequest = controller;
       try {
-        const eventId = document.getElementById('eventSelect')?.value;
-        const url = eventId
-          ? `${BASE_URL}/users/next-serial-number?event_id=${eventId}`
-          : `${BASE_URL}/users/next-serial-number`;
+        const url = `${BASE_URL}/users/next-serial-number?event_id=${eventId}` +
+          (contributorId ? `&contributor_id=${contributorId}` : '');
         const response = await authFetch(url, {
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json' }, signal: controller.signal,
         });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error(`Could not load family count (${response.status}).`);
         const data = await response.json();
-        if (!isEditMode) {
-          document.getElementById('serialNumber').value = data.next_serial_number;
-        }
+        if (controller.signal.aborted || eventId !== document.getElementById('eventSelect').value ||
+            contributorId !== lastSavedContributorId || !currentStaff) return;
+        input.value = data.serial_number ?? data.next_serial_number;
+        status.textContent = `Collected families: ${data.collected_family_count}. ` +
+          (data.serial_number ? 'This family already has this event number.' : 'Next expected number only; final number is assigned on save.');
       } catch (error) {
-        // Preview is best-effort; it does not block manual entry.
+        if (controller.signal.aborted) return;
+        input.value = '';
+        status.textContent = error.message;
+      } finally {
+        if (serialNumberRequest === controller) serialNumberRequest = null;
       }
     }
 
-    // Space-separated quick entry: Native Husband Wife HusbandJob Amount (~ or - skips a field).
+    // Space-separated quick entry: Native Husband Wife HusbandJob Amount; extra spaces or ~ / - skip fields.
     // Phone is not included here; it is typed directly in its own field above.
     function handlePasteDetails() {
-      const pastedText = document.getElementById('pasteDetails').value.trim();
-      if (!pastedText) return;
+      const pastedText = document.getElementById('pasteDetails').value;
+      if (!pastedText.trim()) return;
 
-      const tokens = pastedText.split(/\s+/);
+      const tokens = pastedText.trimEnd().split(' ');
+      if (tokens[0] === '') tokens.shift();
       let amount = null;
       if (tokens.length) {
         const lastToken = tokens[tokens.length - 1];
@@ -2280,51 +2554,94 @@
       }
     }
 
-    // Look up an exact phone match after the user pauses typing.
+    // Show existing families whose phone numbers start with the digits entered.
     function handlePhoneInput(event) {
-      const phoneNumber = event.target.value.trim();
       clearTimeout(phoneLookupTimer);
-
-      if (!phoneNumber) {
-        lastPhoneLookup = '';
+      const phoneDigits = event.target.value.replace(/\D/g, '');
+      const requestId = ++phoneSuggestionRequestId;
+      phoneSuggestionMatches = [];
+      phoneSuggestionActiveIndex = -1;
+      if (isEditMode || phoneDigits.length < 3) {
+        hidePhoneSuggestions();
         return;
       }
-
-      if (phoneNumber === lastPhoneLookup) {
-        return;
-      }
-
-      phoneLookupTimer = setTimeout(() => lookupUserByPhone(phoneNumber), 350);
+      phoneLookupTimer = setTimeout(() => lookupUsersByPhonePrefix(phoneDigits, requestId), 250);
     }
 
-    async function lookupUserByPhone(phoneNumber) {
-      lastPhoneLookup = phoneNumber;
-
-      const cachedUser = currentUsersList.find(
-        user => String(user.phone_number) === phoneNumber
-      );
-      if (cachedUser) {
-        autofillExistingUser(cachedUser);
-        return;
-      }
-
+    async function lookupUsersByPhonePrefix(phoneDigits, requestId) {
       try {
         const response = await authFetch(
-          `${BASE_URL}/users?search=${encodeURIComponent(phoneNumber)}`,
+          `${BASE_URL}/users?search=${encodeURIComponent(phoneDigits)}`,
           { headers: { 'Accept': 'application/json' } }
         );
         if (!response.ok) return;
 
         const users = await response.json();
-        const exactMatch = users.find(
-          user => String(user.phone_number) === phoneNumber
-        );
-        if (exactMatch) {
-          autofillExistingUser(exactMatch);
-        }
+        if (requestId !== phoneSuggestionRequestId || isEditMode) return;
+        const matches = users
+          .filter(user => String(user.phone_number || '').replace(/\D/g, '').startsWith(phoneDigits))
+          .slice(0, 8);
+        phoneSuggestionMatches = matches;
+        renderPhoneSuggestions();
       } catch (error) {
-        // A lookup failure should not prevent manual form entry.
+        hidePhoneSuggestions();
       }
+    }
+
+    function renderPhoneSuggestions() {
+      const dropdown = document.getElementById('phoneNumberSuggestions');
+      if (!phoneSuggestionMatches.length) {
+        dropdown.innerHTML = '';
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = phoneSuggestionMatches.map(user => `
+        <button type="button" onmousedown="event.preventDefault()" onclick="selectPhoneSuggestion(${user.id})" class="block w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-50 last:border-0">
+          <span class="font-semibold text-slate-800">${escapeHtml(user.husband_name || '')}</span>
+          ${user.wife_name ? `<span class="text-slate-400"> &bull; ${escapeHtml(user.wife_name)}</span>` : ''}
+          <span class="block text-slate-500 font-mono mt-0.5">${escapeHtml(user.phone_number || '')}</span>
+        </button>`).join('');
+      dropdown.classList.remove('hidden');
+    }
+
+    function handlePhoneFieldKeydown(event) {
+      const dropdown = document.getElementById('phoneNumberSuggestions');
+      if (dropdown.classList.contains('hidden') || !phoneSuggestionMatches.length) return;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        phoneSuggestionActiveIndex = Math.min(phoneSuggestionActiveIndex + 1, phoneSuggestionMatches.length - 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        phoneSuggestionActiveIndex = Math.max(phoneSuggestionActiveIndex - 1, 0);
+      } else if (event.key === 'Enter' && phoneSuggestionActiveIndex >= 0) {
+        event.preventDefault();
+        selectPhoneSuggestion(phoneSuggestionMatches[phoneSuggestionActiveIndex].id);
+        return;
+      } else if (event.key === 'Escape') {
+        hidePhoneSuggestions();
+        return;
+      } else {
+        return;
+      }
+      dropdown.querySelectorAll('button').forEach((button, index) => {
+        button.classList.toggle('bg-slate-100', index === phoneSuggestionActiveIndex);
+        if (index === phoneSuggestionActiveIndex) button.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    function selectPhoneSuggestion(userId) {
+      const user = phoneSuggestionMatches.find(match => match.id === userId);
+      if (!user) return;
+      clearTimeout(phoneLookupTimer);
+      phoneSuggestionRequestId++;
+      hidePhoneSuggestions();
+      autofillExistingUser(user);
+    }
+
+    function hidePhoneSuggestions() {
+      const dropdown = document.getElementById('phoneNumberSuggestions');
+      if (dropdown) dropdown.classList.add('hidden');
     }
 
     // Name-based lookup fallback: some existing families have no phone on file (or the counter doesn't
@@ -2564,7 +2881,7 @@
     function autofillExistingUser(user) {
       isEditMode = true;
       document.getElementById('userId').value = user.id;
-      document.getElementById('serialNumber').value = user.serial_number ?? '';
+      document.getElementById('serialNumber').value = '';
       document.getElementById('isThaimama').checked = Boolean(user.is_thaimama);
       document.getElementById('phoneNumber').value = user.phone_number || user.phone || '';
       document.getElementById('husbandName').value = user.husband_name || '';
@@ -2578,7 +2895,7 @@
       document.getElementById('notes').value = user.notes || '';
       document.getElementById('formTitle').textContent = `திருத்தம் #${user.id}`;
       document.getElementById('formSubtitle').textContent = 'இருக்கும் பதிவு கண்டறியப்பட்டது. விவரங்களைப் புதுப்பித்து சேமிக்கவும்.';
-      document.getElementById('submitBtnText').textContent = 'புதுப்பிக்கவும்';
+      document.getElementById('submitBtnText').textContent = 'Update';
       document.getElementById('cancelEditBtn').classList.remove('hidden');
       document.getElementById('amount').value = '';
       zeroOutDenominations();
@@ -2593,7 +2910,7 @@
     // Request Body: { "phone_number": "...", "name": "...", "location": "..." }
     // =========================================================================
     async function createUser(payload) {
-      setSubmitLoading(true, 'சேமிக்கிறது...');
+      setSubmitLoading(true, 'Saving...');
       clearFormFeedback();
 
       try {
@@ -2621,7 +2938,7 @@
 
         // Success handling
         const createdId = newUserData.id || newUserData.user_id || 'new';
-        showGlobalAlert(`"${payload.husband_name}" வெற்றிகரமாக சேமிக்கப்பட்டது! (வ.எண்: ${createdId})`, 'success');
+        showGlobalAlert(`"${payload.husband_name}" வெற்றிகரமாக சேமிக்கப்பட்டது! (Family ID: ${createdId})`, 'success');
         showFormFeedback(`"${payload.husband_name}" பதிவு வெற்றிகரமாக சேர்க்கப்பட்டது!`, true);
 
         // Refresh user list so the new record is available, then switch into edit mode for THEM —
@@ -2647,7 +2964,7 @@
     // Request Body: { "phone_number": "...", "name": "...", "location": "..." }
     // =========================================================================
     async function updateUser(id, payload) {
-      setSubmitLoading(true, 'புதுப்பிக்கிறது...');
+      setSubmitLoading(true, 'Updating...');
       clearFormFeedback();
 
       try {
@@ -2724,7 +3041,9 @@
     function renderEventContributorsList(contributors) {
       const eventId = document.getElementById('eventSelect').value;
       const selectedEvent = currentEventsList.find(event => String(event.event_id) === eventId);
-      document.getElementById('sidebarListTitle').textContent = selectedEvent ? `${selectedEvent.event_name} \u2022 \u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd` : '\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd';
+      const isAdmin = currentStaff?.role === 'admin';
+      const listLabel = isAdmin ? '\u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bbe\u0bb3\u0bb0\u0bcd\u0b95\u0bb3\u0bcd' : '\u0b8e\u0ba9\u0ba4\u0bc1 \u0baa\u0b99\u0bcd\u0b95\u0bb3\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd';
+      document.getElementById('sidebarListTitle').textContent = selectedEvent ? `${selectedEvent.event_name} \u2022 ${listLabel}` : listLabel;
       renderSidebarRecords(contributors);
     }
 
@@ -2742,9 +3061,21 @@
       }
 
       try {
-        const response = await authFetch(`${BASE_URL}/events/${eventId}/contributors`, { headers: { 'Accept': 'application/json' } });
+        const isAdmin = currentStaff?.role === 'admin';
+        const endpoint = isAdmin
+          ? `${BASE_URL}/events/${eventId}/contributors`
+          : `${BASE_URL}/staff/me/collections?event_id=${encodeURIComponent(eventId)}`;
+        const response = await authFetch(endpoint, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) throw new Error('Could not load contributors');
-        currentEventContributors = await response.json();
+        const rows = await response.json();
+        currentEventContributors = isAdmin ? rows : rows.map(row => ({
+          id: row.user_id,
+          husband_name: row.contributor_name,
+          phone_number: row.contributor_phone,
+          amount: row.amount,
+          event_id: row.event_id,
+          transaction_id: row.transaction_id,
+        }));
         renderEventContributorsList(currentEventContributors);
       } catch (error) {
         document.getElementById('sidebarRecordsList').innerHTML = '<p class="px-3.5 py-4 text-xs text-red-500 text-center">ஏற்ற முடியவில்லை.</p>';
@@ -2759,13 +3090,45 @@
       }
       container.innerHTML = users.map(user => {
         const id = user.id !== undefined ? user.id : user.user_id;
+        const eventId = Number(document.getElementById('eventSelect').value);
+        const transactionId = Number(user.transaction_id);
         const amount = user.amount !== undefined ? `<p class="text-[11px] text-emerald-600 font-semibold mt-0.5">${formatRupees(Number(user.amount))}</p>` : '';
-        return `<button type="button" onclick="startEditUser('${id}')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 transition-colors">
-          <p class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(user.husband_name || '-')}</p>
-          <p class="text-[11px] text-slate-400 font-mono mt-0.5">${escapeHtml(user.phone_number || '-')}</p>
-          ${amount}
-        </button>`;
+        return `<div class="border-b border-slate-50 last:border-0">
+          <div class="flex items-stretch">
+            <button type="button" aria-expanded="false" onclick="toggleContributionDenominations(${eventId}, ${transactionId}, this)" class="min-w-0 flex-1 text-left px-3.5 py-2.5 hover:bg-slate-50 transition-colors">
+              <p class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(user.husband_name || '-')}</p>
+              <p class="text-[11px] text-slate-400 font-mono mt-0.5">${escapeHtml(user.phone_number || '-')}</p>
+              ${amount}
+            </button>
+            <button type="button" onclick="startEditUser('${id}')" title="Edit contributor" aria-label="Edit ${escapeHtml(user.husband_name || 'contributor')}" class="px-3 text-slate-400 hover:text-brand-700 hover:bg-slate-50" >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            </button>
+          </div>
+          <div id="denominationDetails-${transactionId}" class="hidden px-3.5 pb-2.5" aria-live="polite"></div>
+        </div>`;
       }).join('');
+    }
+
+    async function toggleContributionDenominations(eventId, transactionId, button) {
+      const details = document.getElementById(`denominationDetails-${transactionId}`);
+      const willExpand = details.classList.contains('hidden');
+      details.classList.toggle('hidden', !willExpand);
+      button.setAttribute('aria-expanded', String(willExpand));
+      if (!willExpand || details.dataset.loaded === 'true') return;
+
+      details.innerHTML = '<p class="text-[11px] text-slate-400">Loading note counts...</p>';
+      try {
+        const response = await authFetch(`${BASE_URL}/events/${eventId}/transactions/${transactionId}/denominations`, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('Could not load denomination details');
+        const result = await response.json();
+        const denominations = Object.entries(result.denominations || {}).sort((left, right) => Number(right[0]) - Number(left[0]));
+        details.innerHTML = denominations.length
+          ? `<div class="flex flex-wrap gap-1.5">${denominations.map(([value, count]) => `<span class="rounded border border-[#EADFC4] bg-[#FFFDF6] px-2 py-1 text-[11px] font-semibold text-slate-700">₹${escapeHtml(value)} × ${escapeHtml(count)}</span>`).join('')}</div>`
+          : '<p class="text-[11px] text-slate-400">No denomination counts were saved for this contribution.</p>';
+        details.dataset.loaded = 'true';
+      } catch (error) {
+        details.innerHTML = '<p class="text-[11px] text-red-500">Could not load denomination details.</p>';
+      }
     }
 
     function renderUserRows(users) {
@@ -2819,7 +3182,7 @@
 
       // Populate form fields
       document.getElementById('userId').value = userId;
-      document.getElementById('serialNumber').value = user.serial_number ?? '';
+      document.getElementById('serialNumber').value = '';
       document.getElementById('isThaimama').checked = Boolean(user.is_thaimama);
       document.getElementById('phoneNumber').value = user.phone_number || user.phone || '';
       document.getElementById('husbandName').value = user.husband_name || '';
@@ -2838,7 +3201,7 @@
       document.getElementById('formTitle').textContent = `திருத்தம் #${userId}`;
       document.getElementById('formSubtitle').textContent = `${user.husband_name} குடும்பத்தின் விவரங்களைப் புதுப்பிக்கவும்`;
 
-      document.getElementById('submitBtnText').textContent = 'புதுப்பிக்கவும்';
+      document.getElementById('submitBtnText').textContent = 'Update';
       document.getElementById('cancelEditBtn').classList.remove('hidden');
       clearFormFeedback();
       zeroOutDenominations();
@@ -2861,7 +3224,7 @@
       document.getElementById('formTitle').textContent = 'புதிய பதிவு';
       document.getElementById('formSubtitle').textContent = 'புதிய குடும்ப விவரத்தை சேர்க்கவும்';
 
-      document.getElementById('submitBtnText').textContent = 'சேமிக்கவும்';
+      document.getElementById('submitBtnText').textContent = 'Save';
       document.getElementById('cancelEditBtn').classList.add('hidden');
       loadNextSerialNumber();
     }
@@ -2932,8 +3295,7 @@
       if (isEditMode && userId) {
         updateUser(userId, payload);
       } else {
-        const serialNumberValue = Number(document.getElementById('serialNumber').value);
-        createUser({ ...payload, serial_number: Number.isFinite(serialNumberValue) && serialNumberValue > 0 ? serialNumberValue : null });
+        createUser(payload);
       }
     }
 
@@ -2974,7 +3336,7 @@
       } else {
         submitBtn.disabled = false;
         submitSpinner.classList.add('hidden');
-        submitBtnText.textContent = isEditMode ? 'Update User' : 'Save User';
+        submitBtnText.textContent = isEditMode ? 'Update' : 'Save';
       }
     }
 
@@ -2994,5 +3356,6 @@
 
   <!-- Print-only receipt: left empty here, filled in by recordAndPrintReceipt()/reprintLastReceipt() just before window.print() is called. -->
   <div id="receiptPrintArea"></div>
+  <div id="eventReportPrintArea"></div>
 </body>
 </html>
